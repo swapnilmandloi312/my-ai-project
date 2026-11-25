@@ -6,6 +6,7 @@ on:
       - 'swapnil_ai_labs/relay_demo.py'
       - 'swapnil_ai_labs/test_relay_client.py'
       - 'deployment/relay.Dockerfile'
+      - 'deployment/relay.Dockerfile.dockerignore'
       - 'pyproject.toml'
       - '.github/workflows/relay-sdk.yml'
 permissions:
