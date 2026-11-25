@@ -2,6 +2,7 @@
 import hashlib,hmac,json,re,sqlite3,time
 from pathlib import Path
 from dataclasses import dataclass
+from contextlib import closing
 
 CATEGORIES=frozenset({"finance","support","operations","knowledge"})
 ID=re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}\Z")
@@ -33,7 +34,7 @@ class Service:
         if len({p.id for p in self.principals})!=len(self.principals) or len({p.token_hash for p in self.principals})!=len(self.principals):raise ValueError("duplicate principal")
         for p in self.principals:
             if not valid_id(p.id) or not valid_id(p.tenant) or not re.fullmatch("[0-9a-f]{64}",p.token_hash) or not p.categories<=CATEGORIES or type(p.limit) is not int or not 1<=p.limit<=10000 or type(p.budget) is not int or not 1<=p.budget<=1000000:raise ValueError("invalid principal")
-        with self.connect() as db:
+        with closing(self.connect()) as db:
             db.executescript("""
             PRAGMA journal_mode=WAL;
             CREATE TABLE IF NOT EXISTS records(tenant TEXT,category TEXT,id TEXT,payload TEXT,PRIMARY KEY(tenant,category,id));
@@ -54,6 +55,7 @@ class Service:
     def seed_record(self,tenant,category,record_id,payload,allowed_principals):
         """Administrative host only; never exposed through HTTP."""
         if not valid_id(tenant) or category not in CATEGORIES or not valid_id(record_id) or type(payload) is not dict:raise ValueError("bad record")
+        allowed_principals=tuple(allowed_principals)
         body=canonical(payload)
         if len(body)>4096:raise ValueError("record too large")
         for pid in allowed_principals:
@@ -81,13 +83,14 @@ class Service:
             return True
         finally:db.close()
     def read(self,authorization,body):
-        p=self.authenticate(authorization);now=int(self.clock());db=self.connect()
+        p=self.authenticate(authorization)
+        if p is None:return 401,{"status":"blocked","reason":"authentication_required","output":None}
+        now=int(self.clock());db=self.connect()
         try:
             db.execute("BEGIN IMMEDIATE")
             def finish(status,reason,output=None):
                 self._audit(db,p.id if p else "",reason,status,now);db.commit()
                 return status,{"status":"executed_read_only" if status==200 else "blocked","reason":reason,"output":output}
-            if p is None:return finish(401,"authentication_required")
             minute=now//60
             db.execute("INSERT INTO quotas VALUES(?,?,1) ON CONFLICT(principal,minute) DO UPDATE SET count=count+1",(p.id,minute))
             q=db.execute("SELECT count FROM quotas WHERE principal=? AND minute=?",(p.id,minute)).fetchone()[0]
