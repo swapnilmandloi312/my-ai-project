@@ -1,0 +1,17 @@
+{
+  "en": {
+    "welcome": "Intelligence for everyone",
+    "choose": "Choose your industry",
+    "status": "Planned application — not yet available"
+  },
+  "hi": {
+    "welcome": "हर किसी के लिए एआई",
+    "choose": "अपना कार्यक्षेत्र चुनें",
+    "status": "प्रस्तावित ऐप — अभी उपलब्ध नहीं है"
+  },
+  "hi-Latn": {
+    "welcome": "Har kisi ke liye AI",
+    "choose": "Apna kaam ka sector chuniye",
+    "status": "Planned app — abhi available nahi hai"
+  }
+}
