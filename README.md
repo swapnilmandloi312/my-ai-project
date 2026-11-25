@@ -1,4 +1,7 @@
-# Swapnil AI Labs — Agent Language & Gateway
+# Swapnil AI Labs — Independent AI Research & Engineering
+
+**Building intelligence people can trust.** Our flagship research track is the [Trusted Intelligence Runtime](docs/TRUSTED_INTELLIGENCE_RUNTIME.md): host authorization before inference, strict model proposals, and verified read-only execution. See the [research-first strategy](docs/RESEARCH_COMPANY_STRATEGY.md). Existing browser utilities remain an experimental applications lab, not our core technology. Actual model evidence and deployment acceptance are tracked separately.
+
 Experimental research preview v0.8 • 25 November 2026
 
 Contract-first language and reference gateway for controlled AI tool execution. Includes a real read-only SQLite integration using synthetic data, an opt-in OpenAI-compatible HTTP adapter tested with a local fixture server, and committed synthetic research evidence. No production security claim or customer data. The small CPU-model evaluation is exploratory, not an independent benchmark.

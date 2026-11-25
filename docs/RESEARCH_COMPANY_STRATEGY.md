@@ -1,0 +1,6 @@
+# Swapnil AI Labs — research-first strategy
+Mission: build intelligence systems people can trust. Flagship: Trusted Intelligence Runtime, a model-independent host authorization and evidence layer. Do not market a set of browser utilities as a research breakthrough or claim to own third-party models. The 72 utilities and five local journeys remain an experimental applications playground.
+
+Research program: safe execution contracts, authorization-before-inference, scoped retrieval and memory, robust evaluation, efficient routing, multilingual research, and eventually original model research. Every experiment must document hypothesis, dataset provenance, baseline, failure cases, reproducible code and limits. Original training needs a separate compute budget and lawful datasets. Partner pilots start with synthetic, read-only finance and operations tasks. Research publication requires human author review and independent validation; do not claim submission until confirmed.
+
+Release discipline: code review → deterministic acceptance → model evidence → independent evaluation → pilot → public claim. Website tells the story of the problem, research, technology, evidence and applications, not a tools catalog. Maintain the same brand identity across publications, GitHub and public surfaces.

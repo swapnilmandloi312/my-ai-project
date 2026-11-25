@@ -1,0 +1,26 @@
+name: Research site deployment package
+on:
+  pull_request:
+    paths:
+      - 'website/**'
+      - 'scripts/build_public_site.py'
+      - 'netlify.toml'
+      - '.github/workflows/public-site-package.yml'
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python scripts/build_public_site.py
+      - run: python -c "from pathlib import Path; p=Path('dist-public'); assert len(list(x for x in p.rglob('*') if x.is_file()))==20; assert 'Trusted Intelligence Runtime' in (p/'index.html').read_text(); assert (p/'apps/sw.js').is_file(); assert not list(p.rglob('test*'))"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: netlify-ready-research-site
+          path: dist-public/

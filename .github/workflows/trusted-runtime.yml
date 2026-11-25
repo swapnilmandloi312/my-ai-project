@@ -1,0 +1,44 @@
+name: Trusted runtime acceptance
+on:
+  pull_request:
+    paths:
+      - 'swapnil_ai_labs/trusted_runtime.py'
+      - 'swapnil_ai_labs/test_trusted_runtime.py'
+      - 'secure_service/**'
+      - 'research/trusted_runtime_model_pilot.py'
+      - '.github/workflows/trusted-runtime.yml'
+permissions:
+  contents: read
+jobs:
+  unit:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        python: ['3.11','3.13']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m unittest -v swapnil_ai_labs.test_trusted_runtime secure_service.test_service
+      - run: python -m secure_service.smoke_http
+  cpu-model:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install torch==2.7.1 --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install transformers==4.53.3 safetensors==0.5.3
+      - run: python research/trusted_runtime_model_pilot.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trusted-runtime-model-evidence
+          path: research/trusted-runtime-model-results.json
