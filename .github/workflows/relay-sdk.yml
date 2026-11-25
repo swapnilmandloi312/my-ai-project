@@ -1,0 +1,51 @@
+name: Relay SDK and container
+on:
+  pull_request:
+    paths:
+      - 'swapnil_ai_labs/relay_client.py'
+      - 'swapnil_ai_labs/relay_demo.py'
+      - 'swapnil_ai_labs/test_relay_client.py'
+      - 'deployment/relay.Dockerfile'
+      - 'deployment/relay.Dockerfile.dockerignore'
+      - 'pyproject.toml'
+      - '.github/workflows/relay-sdk.yml'
+permissions:
+  contents: read
+jobs:
+  sdk:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m unittest -v swapnil_ai_labs.test_relay_client swapnil_ai_labs.test_work_relay swapnil_ai_labs.test_relay_http
+      - run: python -m swapnil_ai_labs.relay_demo > relay-demo-evidence.json
+      - run: pip wheel --no-deps . -w dist
+      - run: |
+          python -m venv /tmp/relay-sdk
+          /tmp/relay-sdk/bin/pip install --no-deps dist/*.whl
+          cd /tmp
+          /tmp/relay-sdk/bin/swapnil-ai-labs-relay > /tmp/installed-relay.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: relay-sdk-and-evidence
+          path: |
+            dist/*.whl
+            relay-demo-evidence.json
+  container:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: docker build -f deployment/relay.Dockerfile -t relay-candidate .
+      - run: docker run --rm --network none --read-only --tmpfs /tmp:rw,noexec,nosuid,size=64m --cap-drop ALL --security-opt no-new-privileges relay-candidate python -m swapnil_ai_labs.relay_demo > container-relay-evidence.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: relay-container-evidence
+          path: container-relay-evidence.json

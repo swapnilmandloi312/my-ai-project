@@ -35,3 +35,6 @@ Run `python -m swapnil_ai_labs.engineering_demo`. See [engineering tools](docs/E
 
 ## Global ecosystem expansion
 Explore the [24-industry roadmap](docs/GLOBAL_ECOSYSTEM.md), [machine-readable product catalog](ecosystem/catalog.json), and [initial interface translations](ecosystem/interface-copy.json). Discover planned applications with `python -m ecosystem.discover --audience farmers`. Catalog entries describe future products, not deployed applications or validated model language support. Existing secure service remains the tested read-only reference.
+
+## Work Relay — functional local pilot
+Run `python -m swapnil_ai_labs.relay_demo` for a synthetic, authenticated four-department HTTP walkthrough. [Quickstart](docs/RELAY_QUICKSTART.md) · [API and limitations](docs/WORK_RELAY.md) · [Provider reliability](docs/PROVIDER_RELIABILITY.md). No external execution or public production service.
