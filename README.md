@@ -1,7 +1,7 @@
 # Swapnil AI Labs — Agent Language & Gateway
-Experimental research preview v0.3 • 25 November 2026
+Experimental research preview v0.4 • 25 November 2026
 
-Contract-first language and reference gateway for controlled AI tool execution. Includes a real read-only SQLite integration using synthetic data, an opt-in OpenAI-compatible HTTP adapter tested with a local fixture server, and committed synthetic research evidence. No production security claim, real LLM benchmark, customer data or external API calls.
+Contract-first language and reference gateway for controlled AI tool execution. Includes a real read-only SQLite integration using synthetic data, an opt-in OpenAI-compatible HTTP adapter tested with a local fixture server, and committed synthetic research evidence. No production security claim or customer data. The small CPU-model evaluation is exploratory, not an independent benchmark.
 
 ## Run
 Python 3.13. Core and pilot use the standard library.
@@ -14,3 +14,6 @@ python research/verify_evidence.py
 See [report](research/REPORT.md), [raw evidence](research/raw-results.jsonl), [reproducibility](research/REPRODUCIBILITY.md), [integration](integrations/PRODUCT.md), [security](SECURITY.md), [website](website/index.html) and [launch drafts](distribution/PILOT_LAUNCH.md). The previous local launch package includes the five experiment generators.
 
 Public experimental preview; license decision pending. Do not deploy with sensitive workloads. No claims of novelty or superiority.
+
+## v0.4 research platform
+[Context selection, memory, routing and persistent authorization](intelligence/README.md) · [Browser playground](website/playground.html) · [Commercial pilot](distribution/COMMERCIAL_PILOT.md). Runtime acceptance and independent evaluation remain separate from experimental source publication.

@@ -1,0 +1,26 @@
+name: Intelligence components
+on:
+  pull_request:
+    paths:
+      - 'intelligence/**'
+      - '.github/workflows/intelligence-components.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m unittest -v intelligence.test_components intelligence.test_authorized_store
+      - run: python -m intelligence.benchmark
+      - uses: actions/upload-artifact@v4
+        with:
+          name: intelligence-evidence
+          path: intelligence-results.json
