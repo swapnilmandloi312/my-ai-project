@@ -1,0 +1,15 @@
+# Swapnil AI Labs — operational SOP, v0.8 release candidate
+## 1. Scope and ownership
+Only authenticated, read-only access to explicitly authorized records. No tool writes, payment, email, PHI, customer production traffic or automated privilege elevation. Service credentials identify trusted application hosts, not end-user identity. Assign service owner, security owner and incident lead before external pilot.
+## 2. Provision
+Create isolated environment, service account, encrypted volume, independent secret manager, high-entropy per-principal bearer credentials (store SHA-256 hashes only), unique 32+ byte audit HMAC key. Never use test credentials. Provision principal category permissions and per-record ACL through a trusted administrative path. Rotate credentials by updating configuration and restarting under controlled change; revoke ACLs through reviewed administrative migration. Use TLS reverse proxy and hardened WSGI server with request timeouts, connection limits and external IP/credential rate limits. Do not expose the reference development server publicly.
+## 3. Release gates
+Review threat model, run every core/integration/security suite, validate exact revision and dependency inventory, test production identity and ACL integration, run independent adversarial cases and load/soak tests, obtain security sign-off, restore backup and rollback drill. Stage with synthetic records, then approved limited pilot. Production acceptance is a separate signed decision.
+## 4. Monitor
+Alert on elevated 401/403/409/429/503, quota growth, database lock failures, unusual authorized reads, audit verification failures and disk growth. No raw prompts, tokens or customer data in telemetry. Fixed-window limits are not a substitute for edge controls. Archive/expire quota and replay tables under approved retention policy; never delete replay records before the intended replay window. Export audit chain checkpoints to external immutable storage: a local HMAC chain alone cannot detect tail truncation or key compromise.
+## 5. Incidents
+Contain by revoking affected credentials and blocking service traffic; preserve evidence, audit checkpoints and backups; investigate actual scope with security owner; notify stakeholders as legally required; patch in isolated branch; re-run regression and incident reproductions; restore via reviewed release. Never loosen ACLs to fix a failing agent.
+## 6. Backup and recovery
+Use SQLite consistent backup API, encrypt backup, verify integrity and audit chain on restore, rehearse rollback in staging. Multi-node production requires a transactional shared data store and tested isolation/failover; SQLite reference is not a high-availability cluster.
+## 7. Data and research
+Use dataset cards, independent labels, immutable split manifests, versioned results, consent and deletion controls. Separate authored synthetic tests from independent external benchmarks and real customer measurements. Release papers with limitations, negative results, code revision and raw evidence.
