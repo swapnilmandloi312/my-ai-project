@@ -25,13 +25,14 @@ jobs:
       - run: npm install --no-save --ignore-scripts playwright@1.51.1
       - run: npx playwright install chromium --with-deps
       - run: node website/apps/test-browser.mjs
+      - run: node website/apps/test-pwa.mjs
       - name: Assemble static release
         run: |
           mkdir -p static-release
           cp -r website/. static-release/
           cp LICENSE static-release/LICENSE
           cp THIRD_PARTY_NOTICES.md static-release/THIRD_PARTY_NOTICES.md
-          rm -f static-release/apps/test-browser.mjs static-release/apps/test-engine.mjs
+          rm -f static-release/apps/test-browser.mjs static-release/apps/test-engine.mjs static-release/apps/test-pwa.mjs
           python -m zipfile -c swapnil-ai-labs-static-preview.zip static-release
       - uses: actions/upload-artifact@v4
         with:
@@ -39,4 +40,5 @@ jobs:
           path: |
             static-release/
             apps-mobile-preview.png
+            apps-offline-preview.png
             swapnil-ai-labs-static-preview.zip
