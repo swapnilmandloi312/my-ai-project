@@ -1,0 +1,28 @@
+name: CPU model pilot
+on:
+  pull_request:
+    paths:
+      - 'research/real_model_eval.py'
+      - '.github/workflows/real-model-eval.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install torch==2.7.1 --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install transformers==4.53.3 safetensors==0.5.3
+      - run: python research/real_model_eval.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: real-model-evidence
+          path: research/real-model-results.json
