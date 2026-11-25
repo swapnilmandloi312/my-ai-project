@@ -18,7 +18,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - run: python -m unittest -v intelligence.test_components
+      - run: python -m unittest -v intelligence.test_components intelligence.test_authorized_store
       - run: python -m intelligence.benchmark
       - uses: actions/upload-artifact@v4
         with:
