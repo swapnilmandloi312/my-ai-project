@@ -6,7 +6,7 @@ let browser;
 try{
  for(let i=0;i<30;i++){try{if((await fetch("http://127.0.0.1:8768/apps/")).ok)break;}catch{}await new Promise(r=>setTimeout(r,200));}
  browser=await chromium.launch({headless:true});const page=await browser.newPage({viewport:{width:390,height:844}});const errors=[],external=[];page.on("pageerror",e=>errors.push(e.message));page.on("request",r=>{if(!r.url().startsWith("http://127.0.0.1:8768/"))external.push(r.url());});
- await page.goto("http://127.0.0.1:8768/apps/");await page.locator('[data-id="finance-1"]').waitFor();
+ await page.goto("http://127.0.0.1:8768/apps/tools.html");await page.locator('[data-id="finance-1"]').waitFor();
  assert.equal(await page.locator("#cards button").count(),72);
  const ids=await page.locator("#cards button").evaluateAll(ns=>ns.map(n=>n.dataset.id));
  for(const id of ids){await page.locator('[data-id="'+id+'"]').click();await page.locator("#example").click();await page.locator("#run").click();assert.equal(await page.locator("#save").isEnabled(),true,id);}
