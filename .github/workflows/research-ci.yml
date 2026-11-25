@@ -16,3 +16,4 @@ jobs:
       - run: python -m unittest -v test_agent_language.py
       - run: python -m unittest discover -v -s tests
       - run: python -m integrations.pilot
+      - run: python research/verify_evidence.py
