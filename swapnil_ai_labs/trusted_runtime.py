@@ -1,5 +1,6 @@
 """Host-authorized model proposal runtime. Read-only, local reference implementation."""
 from dataclasses import dataclass
+from contextlib import closing
 import json,sqlite3,time,uuid
 from secure_service.service import Service,CATEGORIES,valid_id,strict_json
 
@@ -16,7 +17,7 @@ class TrustedRuntime:
         self.service=service
         self.provider=provider
         self.clock=clock
-        with service.connect() as db:
+        with closing(service.connect()) as db:
             db.executescript("""
               CREATE TABLE IF NOT EXISTS inference_requests(
                 principal TEXT NOT NULL,id TEXT NOT NULL,PRIMARY KEY(principal,id));
