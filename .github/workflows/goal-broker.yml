@@ -1,0 +1,30 @@
+name: Authenticated goal broker acceptance
+on:
+  pull_request:
+    paths:
+      - 'swapnil_ai_labs/goal_broker.py'
+      - 'swapnil_ai_labs/goal_broker_demo.py'
+      - 'swapnil_ai_labs/test_goal_broker.py'
+      - '.github/workflows/goal-broker.yml'
+permissions:
+  contents: read
+jobs:
+  acceptance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    strategy:
+      matrix:
+        python: ['3.11','3.13']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m unittest -v swapnil_ai_labs.test_goal_broker swapnil_ai_labs.test_goal_queue swapnil_ai_labs.test_goal_agents
+      - run: python -m swapnil_ai_labs.goal_broker_demo > goal-broker-evidence.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: goal-broker-${{ matrix.python }}
+          path: goal-broker-evidence.json
