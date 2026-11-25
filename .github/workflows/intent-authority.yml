@@ -1,0 +1,24 @@
+name: Intent authority and evidence integrity
+on:
+  pull_request:
+    paths:
+      - 'swapnil_ai_labs/intent_authority.py'
+      - 'swapnil_ai_labs/evidence_integrity.py'
+      - 'swapnil_ai_labs/test_intent_authority.py'
+      - '.github/workflows/intent-authority.yml'
+permissions:
+  contents: read
+jobs:
+  acceptance:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        python: ['3.11','3.13']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m unittest -v swapnil_ai_labs.test_intent_authority swapnil_ai_labs.test_trusted_runtime
