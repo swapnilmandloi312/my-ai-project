@@ -1,0 +1,12 @@
+**
+!deployment/
+!deployment/requirements.txt
+!secure_service/
+!secure_service/**
+!swapnil_ai_labs/
+!swapnil_ai_labs/**
+!intelligence/
+!intelligence/**
+**/__pycache__/
+**/*.pyc
+**/test_*.py
