@@ -1,0 +1,30 @@
+name: Secure service acceptance
+on:
+  pull_request:
+    paths:
+      - 'secure_service/**'
+      - '.github/workflows/secure-service.yml'
+      - 'datasets/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      matrix:
+        python: ['3.11', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m unittest -v secure_service.test_service
+      - run: python -m secure_service.benchmark
+      - uses: actions/upload-artifact@v4
+        with:
+          name: secure-service-evidence-${{ matrix.python }}
+          path: secure-service-results.json
