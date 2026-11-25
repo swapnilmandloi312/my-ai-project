@@ -14,7 +14,8 @@ class BrokerPrincipal:
     role:str
 
 class Broker:
-    def __init__(self,queue,principals):
+    def __init__(self,queue,principals,*,planner=None):
+        self.planner=planner
         self.queue=queue;self.agents=queue.agents;self.principals=tuple(principals)
         if len({p.id for p in self.principals})!=len(self.principals) or len({p.token_hash for p in self.principals})!=len(self.principals):raise ValueError("duplicate credentials")
         for p in self.principals:
@@ -48,11 +49,15 @@ class Broker:
             ctl=db.execute("SELECT paused FROM goal_queue_control WHERE tenant=?",(p.tenant,)).fetchone()
             counts={r[0]:r[1] for r in db.execute("SELECT status,count(*) FROM goal_jobs WHERE tenant=? GROUP BY status",(p.tenant,))}
             rows=db.execute("SELECT id,task,category,revision,status,attempts,max_attempts,result FROM goal_jobs WHERE tenant=? ORDER BY rowid DESC LIMIT 100",(p.tenant,)).fetchall()
-            return {"tenant":p.tenant,"role":p.role,"paused":bool(ctl and ctl[0]),"counts":counts,"jobs":[{**dict(r),"result":strict_json(r["result"]) if r["result"] else None} for r in rows],"scope":"local_deterministic_goal_evaluation","external_actions":False}
+            return {"planning":self.planner.snapshot(p.tenant) if self.planner else None,"tenant":p.tenant,"role":p.role,"paused":bool(ctl and ctl[0]),"counts":counts,"jobs":[{**dict(r),"result":strict_json(r["result"]) if r["result"] else None} for r in rows],"scope":"local_deterministic_goal_evaluation","external_actions":False}
     def command(self,p,body):
         require(p.role=="operator","role_denied")
         require(type(body) is dict and type(body.get("action")) is str,"invalid_command")
         action=body["action"]
+        if action=="plan":
+            require(self.planner is not None,"planner_unavailable")
+            require(set(body)=={"action","job"},"invalid_command")
+            return self.planner.plan(p.tenant,body["job"])
         if action=="set_task":
             require(set(body)=={"action","task","category","evidence","revision"},"invalid_command")
             rev=self.agents.set_task(p.tenant,body["task"],body["category"],body["evidence"],body["revision"])
@@ -98,7 +103,7 @@ def make_app(broker):
                 body=strict_json(data.decode("utf-8"))
             except (ValueError,UnicodeError,RecursionError):return respond(400,{"reason":"malformed_json"})
             action=body.get("action") if type(body) is dict else None
-            known=action if type(action) is str and action in {"set_task","enqueue","pause","resume","tick"} else "invalid"
+            known=action if type(action) is str and action in {"set_task","enqueue","pause","resume","tick","plan"} else "invalid"
             try:result=broker.command(p,body)
             except GoalError as e:
                 broker.event(p,known,"denied")
