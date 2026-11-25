@@ -1,0 +1,43 @@
+name: Isolated n8n runtime test
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/n8n-runtime.yml'
+      - 'integrations/n8n-workflow.json'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Execute imported workflow against synthetic service
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m integrations.http_pilot > /tmp/pilot.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true; docker rm -f research-n8n >/dev/null 2>&1 || true' EXIT
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('integrations/n8n-workflow.json').read_text())
+          p['id']='ResearchInvoice1'
+          Path('/tmp/research-workflow.json').write_text(json.dumps(p))
+          PY
+          chmod 644 /tmp/research-workflow.json
+          docker run --name research-n8n --network host --entrypoint /bin/sh -e N8N_DIAGNOSTICS_ENABLED=false -e N8N_VERSION_NOTIFICATIONS_ENABLED=false -e N8N_PERSONALIZATION_ENABLED=false -v /tmp/research-workflow.json:/tmp/workflow.json:ro docker.n8n.io/n8nio/n8n:1.123.101 -c 'n8n import:workflow --input=/tmp/workflow.json && n8n execute --id=ResearchInvoice1' | tee /tmp/n8n-execution.log
+          grep -q '12500' /tmp/n8n-execution.log
+          grep -q 'executed_read_only' /tmp/n8n-execution.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: n8n-runtime-evidence
+          path: /tmp/n8n-execution.log
