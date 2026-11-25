@@ -1,13 +1,16 @@
 # Swapnil AI Labs — Agent Language & Gateway
-Experimental research preview v0.2 • 25 November 2026
+Experimental research preview v0.3 • 25 November 2026
 
-A contract-first language parser and reference gateway for **mock** AI tool execution. Not production security software. No external model, paid compute, customer data or real tool execution.
+Contract-first language and reference gateway for controlled AI tool execution. Includes a real read-only SQLite integration using synthetic data, an opt-in OpenAI-compatible HTTP adapter tested with a local fixture server, and committed synthetic research evidence. No production security claim, real LLM benchmark, customer data or external API calls.
 
 ## Run
-Python 3.13 recommended. No dependencies for the core.
+Python 3.13. Core and pilot use the standard library.
 ```sh
-python -m unittest -v test_agent_language.py tests/test_gateway.py
+python -m unittest -v test_agent_language.py
+python -m unittest discover -v -s tests
+python -m integrations.pilot
+python research/verify_evidence.py
 ```
-See [research evidence](research/REPORT.md), [integration notes](integrations/PRODUCT.md) and the two sample contracts. The separate complete launch package contains five research runners and website materials; this GitHub preview is the core gateway subset.
+See [report](research/REPORT.md), [raw evidence](research/raw-results.jsonl), [reproducibility](research/REPRODUCIBILITY.md), [integration](integrations/PRODUCT.md), [security](SECURITY.md), [website](website/index.html) and [launch drafts](distribution/PILOT_LAUNCH.md). The previous local launch package includes the five experiment generators.
 
-The repository is a public experimental preview, not an open-source licensed release. License selection is pending founder review. No claims of novelty, industry superiority, or production readiness.
+Public experimental preview; license decision pending. Do not deploy with sensitive workloads. No claims of novelty or superiority.
