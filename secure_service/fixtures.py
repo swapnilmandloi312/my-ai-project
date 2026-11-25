@@ -9,7 +9,8 @@ def seed(service,n=12):
         for i in range(n):
             rid=f"{category}-{i:03d}"
             for tenant,pid,value in [("tenant-a","reader-a",i+100),("tenant-b","reader-b",i+900)]:
-                payload={"synthetic":True,"category":category,"value":value}
+                fields={"finance":{"amount_cents":value*100,"currency":"USD","status":"open"},"support":{"ticket_number":value,"priority":"normal","status":"resolved"},"operations":{"shipment_number":value,"status":"in_transit"},"knowledge":{"document_number":value,"text":"Synthetic policy reference "+str(value)}}
+                payload={"synthetic":True,"category":category,"value":value,**fields[category]}
                 service.seed_record(tenant,category,rid,payload,[pid] if i%2==0 else [])
 def request(category,rid,request_id):
     return {"version":"1.0","request_id":request_id,"category":category,"record_id":rid,"proposal":{"version":"1.0","action":"read_record","category":category,"record_id":rid}}
