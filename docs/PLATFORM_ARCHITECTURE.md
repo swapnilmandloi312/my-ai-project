@@ -11,7 +11,7 @@ Memory is tenant-scoped and only trusted host writes are permitted. The router u
 - ADR-004: local standard-library reference runtime; no cloud dependency for the demo. Container and cloud profiles must remain separate from production identity.
 - ADR-005: synthetic fixtures and provenance tracked separately from real, licensed evaluation data.
 - ADR-006: default-deny on parse failure and no eligible route. Track utility alongside safety.
-- ADR-007: no license grant, patent filing, or publication of confidential client material without a specific founder decision.
+- ADR-007: MIT for original project materials; no patent filing or publication of confidential client material without a specific founder decision.
 - ADR-008: retain negative results, compare equivalent baselines, and state uncertainties; no claim of novelty without prior-art and independent validation.
 
 ## Future milestones and acceptance gates
