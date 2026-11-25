@@ -15,7 +15,7 @@ def main():
         try:
             docker("build","-f","deployment/Dockerfile","-t",name,".",cwd=ROOT)
             docker("volume","create",volume,stdout=subprocess.DEVNULL)
-            docker("run","--rm",*mount,"--entrypoint","python",name,"deployment/seed_staging.py")
+            docker("run","--rm",*mount,"--entrypoint","python",name,"-m","deployment.seed_staging")
             docker("run","-d","--name",name,*mount,"-p","127.0.0.1::8080",name,stdout=subprocess.DEVNULL)
             port=docker("port",name,"8080/tcp",capture_output=True,text=True).stdout.strip().split(":")[-1]
             url="http://127.0.0.1:"+port
