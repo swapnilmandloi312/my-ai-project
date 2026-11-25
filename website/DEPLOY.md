@@ -1,2 +1,0 @@
-# Deployment handoff
-This self-contained page is intended for /research/ on the existing Netlify site. Do not replace the existing homepage. Copy website/index.html to research/index.html in the actual site's source repository, update navigation, run a deploy preview, verify existing routes and links, then publish after validation. Existing Netlify account and source mapping were not accessible; no live deployment has occurred.

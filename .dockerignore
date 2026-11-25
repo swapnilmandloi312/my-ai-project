@@ -1,9 +1,0 @@
-**
-!secure_service/
-!secure_service/**
-!deployment/
-!deployment/requirements.txt
-!deployment/seed_staging.py
-!deployment/backup.py
-**/__pycache__/
-**/*.pyc
