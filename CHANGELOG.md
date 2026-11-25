@@ -1,4 +1,9 @@
 # Changelog
+## 0.6.0 — proposed experimental engineering tools
+- Fixed-stage workflow compiler, evaluation metrics, rule-based debugger and aggregate observability.
+- Integrated six-case synthetic engineering demo and twelve regression tests.
+- Customer use-case and engineering documentation.
+
 ## 0.5.0 — proposed experimental foundation
 - Integrated offline reference workflow linking context, memory, estimated model routing, versioned proposals and persistent synthetic authorization.
 - Versioned proposal JSON schema and regression tests.

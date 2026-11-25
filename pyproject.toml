@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "swapnil-ai-labs-research"
-version = "0.5.0"
+version = "0.6.0"
 description = "Experimental offline intelligence platform"
 requires-python = ">=3.11"
 dependencies = []
@@ -12,6 +12,7 @@ readme = "README.md"
 
 [project.scripts]
 swapnil-ai-labs-demo = "swapnil_ai_labs.demo:main"
+swapnil-ai-labs-engineering-demo = "swapnil_ai_labs.engineering_demo:main"
 
 [tool.setuptools.packages.find]
 include = ["swapnil_ai_labs*", "intelligence*"]

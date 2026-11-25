@@ -1,0 +1,26 @@
+name: Engineering platform checks
+on:
+  pull_request:
+    paths:
+      - 'swapnil_ai_labs/**'
+      - '.github/workflows/engineering-v06.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  engineering:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m unittest -v swapnil_ai_labs.test_engineering swapnil_ai_labs.test_platform intelligence.test_components intelligence.test_authorized_store
+      - run: python -m swapnil_ai_labs.engineering_demo
+      - uses: actions/upload-artifact@v4
+        with:
+          name: engineering-demo-evidence
+          path: engineering-results.json
