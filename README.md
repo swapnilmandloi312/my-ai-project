@@ -29,3 +29,6 @@ Run `python -m swapnil_ai_labs.engineering_demo`. See [engineering tools](docs/E
 
 ## v0.8 secure service release candidate
 [Authenticated read-only service](secure_service/README.md) · [Dataset card](datasets/README.md) · [Production SOP](docs/PRODUCTION_SOP.md) · [Security acceptance](docs/SECURITY_ACCEPTANCE.md). Four synthetic domains, record ACLs, host-bound proposals, persistent replay/budget controls, local audit chain. Run `python -m unittest -v secure_service.test_service`, `python -m secure_service.smoke_http` and `python -m secure_service.benchmark`. Not production-certified or deployed.
+
+## Global ecosystem expansion
+Explore the [24-industry roadmap](docs/GLOBAL_ECOSYSTEM.md), [machine-readable product catalog](ecosystem/catalog.json), and [initial interface translations](ecosystem/interface-copy.json). Discover planned applications with `python -m ecosystem.discover --audience farmers`. Catalog entries describe future products, not deployed applications or validated model language support. Existing secure service remains the tested read-only reference.
