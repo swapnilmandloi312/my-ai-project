@@ -42,6 +42,8 @@ def main():
             docker("exec",name,"python","deployment/backup.py","/data/service.db","/data/backup.db")
             docker("exec",name,"python","-c","import os; from secure_service.service import Service,Principal; import json; p=[Principal(x['id'],x['tenant'],x['token_hash'],frozenset(x['categories']),x['limit'],x['budget']) for x in json.loads(os.environ['SWAPNIL_AI_LABS_PRINCIPALS'])]; s=Service('/data/backup.db',p,bytes.fromhex(os.environ['SWAPNIL_AI_LABS_AUDIT_KEY'])); assert s.verify_audit(); print('Backup audit chain verified')")
             docker("restart",name,stdout=subprocess.DEVNULL)
+            port=docker("port",name,"8080/tcp",capture_output=True,text=True).stdout.strip().split(":")[-1]
+            url="http://127.0.0.1:"+port
             for i in range(60):
                 try:
                     with urllib.request.urlopen(url+"/healthz",timeout=1) as r:
