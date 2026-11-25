@@ -1,0 +1,44 @@
+name: Relay evidence and model comparison
+on:
+  pull_request:
+    paths:
+      - 'swapnil_ai_labs/relay_evidence.py'
+      - 'swapnil_ai_labs/test_relay_evidence.py'
+      - 'swapnil_ai_labs/decision_provider.py'
+      - 'swapnil_ai_labs/test_decision_provider.py'
+      - 'research/decision_model_comparison.py'
+      - '.github/workflows/relay-evidence.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        python: ['3.11','3.13']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m unittest -v swapnil_ai_labs.test_relay_evidence swapnil_ai_labs.test_decision_provider swapnil_ai_labs.test_work_relay swapnil_ai_labs.test_trusted_runtime
+  model:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install torch==2.7.1 --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install transformers==4.53.3 safetensors==0.5.3
+      - run: python research/decision_model_comparison.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: decision-model-evidence
+          path: research/decision-model-results.json
