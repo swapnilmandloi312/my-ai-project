@@ -1,0 +1,38 @@
+name: Private operations schema acceptance
+on:
+  pull_request:
+    paths:
+      - 'deployment/supabase/**'
+      - '.github/workflows/cloud-schema.yml'
+permissions:
+  contents: read
+jobs:
+  postgres:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: synthetic-ci-only
+          POSTGRES_DB: sal_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGPASSWORD: synthetic-ci-only
+      PGHOST: 127.0.0.1
+      PGUSER: postgres
+      PGDATABASE: sal_test
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: |
+          psql --no-psqlrc -v ON_ERROR_STOP=1 -f deployment/supabase/test_bootstrap.sql
+          psql --no-psqlrc -v ON_ERROR_STOP=1 -f deployment/supabase/001_private_operations.sql
+          psql --no-psqlrc -v ON_ERROR_STOP=1 -f deployment/supabase/test_isolation.sql
