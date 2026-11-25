@@ -1,0 +1,68 @@
+{
+  "name": "Swapnil AI Labs — read-only invoice pilot",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Synthetic research demo\nStart `python -m integrations.http_pilot` locally. Run n8n on the same host/network namespace. No real customer data, credentials or public exposure.",
+        "height": 200,
+        "width": 420
+      },
+      "id": "c2e4ef33-448a-4ea2-92cc-4a8e2ac64951",
+      "name": "Setup notes",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -200
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "ce2e9f4a-0e7f-452c-8c44-74bad41a7fa1",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8765/propose",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"action\":\"lookup_invoice\",\"args\":{\"tenant\":\"demo\",\"invoice_id\":\"INV-001\"}}",
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "id": "0ef585ed-5adb-4928-85dd-7052e71eb0a8",
+      "name": "Validate and read invoice",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        260,
+        40
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Validate and read invoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
