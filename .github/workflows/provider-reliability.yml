@@ -1,0 +1,25 @@
+name: Provider reliability acceptance
+on:
+  pull_request:
+    paths:
+      - 'swapnil_ai_labs/isolated_provider.py'
+      - 'swapnil_ai_labs/test_isolated_provider.py'
+      - 'swapnil_ai_labs/trusted_runtime.py'
+      - '.github/workflows/provider-reliability.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    strategy:
+      matrix:
+        python: ['3.11','3.13']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m unittest -v swapnil_ai_labs.test_isolated_provider swapnil_ai_labs.test_trusted_runtime secure_service.test_service
