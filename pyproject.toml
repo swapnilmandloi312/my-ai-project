@@ -4,11 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "swapnil-ai-labs-research"
-version = "0.6.0"
+version = "0.7.0"
 description = "Experimental offline intelligence platform"
 requires-python = ">=3.11"
 dependencies = []
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
 
 [project.scripts]
 swapnil-ai-labs-demo = "swapnil_ai_labs.demo:main"
