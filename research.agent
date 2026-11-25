@@ -1,0 +1,10 @@
+agent ResearchAgent
+model auto
+budget_usd 0.10
+max_steps 5
+allow search_public
+allow publish_report
+deny send_email
+require verified_sources 2
+require approval publish_report
+on_failure stop
