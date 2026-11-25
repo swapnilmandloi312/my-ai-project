@@ -1,0 +1,33 @@
+name: Hugging Face CPU comparison
+on:
+  pull_request:
+    paths:
+      - 'research/hf_model_benchmark.py'
+      - '.github/workflows/hf-model-benchmark.yml'
+permissions:
+  contents: read
+jobs:
+  model:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        model: [qwen, smollm]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install torch==2.7.1 --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install transformers==4.53.3 safetensors==0.5.3
+      - run: python research/hf_model_benchmark.py
+        env:
+          BENCHMARK_MODEL: ${{ matrix.model }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hf-benchmark-${{ matrix.model }}
+          path: research/hf-results-${{ matrix.model }}.json
