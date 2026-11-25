@@ -1,0 +1,30 @@
+name: Durable goal queue acceptance
+on:
+  pull_request:
+    paths:
+      - 'swapnil_ai_labs/goal_queue.py'
+      - 'swapnil_ai_labs/goal_queue_demo.py'
+      - 'swapnil_ai_labs/test_goal_queue.py'
+      - 'swapnil_ai_labs/goal_agents.py'
+      - '.github/workflows/goal-queue.yml'
+permissions:
+  contents: read
+jobs:
+  acceptance:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        python: ['3.11','3.13']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m unittest -v swapnil_ai_labs.test_goal_queue swapnil_ai_labs.test_goal_agents
+      - run: python -m swapnil_ai_labs.goal_queue_demo > goal-queue-evidence.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: durable-goal-queue-${{ matrix.python }}
+          path: goal-queue-evidence.json
