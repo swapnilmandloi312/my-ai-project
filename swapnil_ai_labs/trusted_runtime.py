@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from contextlib import closing
 import json,sqlite3,time,uuid
 from secure_service.service import Service,CATEGORIES,valid_id,strict_json
+from swapnil_ai_labs.isolated_provider import ProviderError
 
 @dataclass(frozen=True)
 class HostTask:
@@ -81,6 +82,9 @@ class TrustedRuntime:
                 raw=self.provider({"version":"1.0","action":"read_record","category":task.category,"record_id":task.record_id},task.intent)
                 if type(raw) is not str or len(raw)>4096:raise ValueError("invalid proposal")
                 proposal=strict_json(raw)
+            except ProviderError as exc:
+                self._denial(auth,exc.reason)
+                return finish("blocked",exc.reason)
             except Exception:
                 self._denial(auth,"provider_or_proposal_failure")
                 return finish("blocked","provider_or_proposal_failure")
