@@ -15,6 +15,7 @@ license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
 [project.scripts]
 swapnil-ai-labs-demo = "swapnil_ai_labs.demo:main"
 swapnil-ai-labs-engineering-demo = "swapnil_ai_labs.engineering_demo:main"
+swapnil-ai-labs-relay = "swapnil_ai_labs.relay_demo:main"
 
 [tool.setuptools.packages.find]
 include = ["swapnil_ai_labs*", "intelligence*", "secure_service*"]
