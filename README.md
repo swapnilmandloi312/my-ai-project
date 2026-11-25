@@ -1,5 +1,5 @@
 # Swapnil AI Labs — Agent Language & Gateway
-Experimental research preview v0.7 • 25 November 2026
+Experimental research preview v0.8 • 25 November 2026
 
 Contract-first language and reference gateway for controlled AI tool execution. Includes a real read-only SQLite integration using synthetic data, an opt-in OpenAI-compatible HTTP adapter tested with a local fixture server, and committed synthetic research evidence. No production security claim or customer data. The small CPU-model evaluation is exploratory, not an independent benchmark.
 
@@ -26,3 +26,6 @@ Run `python -m swapnil_ai_labs.engineering_demo`. See [engineering tools](docs/E
 
 ## Open-source ecosystem v0.7
 [MIT license](LICENSE) · [Contributing](CONTRIBUTING.md) · [Component catalog](docs/COMPONENT_CATALOG.md) · [Ecosystem strategy](docs/ECOSYSTEM_STRATEGY.md) · [Third-party notices](THIRD_PARTY_NOTICES.md). Additional independent prototypes: scoped cache, knowledge graph, extractive compression, local message protocol and offline improvement gate. Run `python -m unittest -v intelligence.test_future_components`. Netlify deferred.
+
+## v0.8 secure service release candidate
+[Authenticated read-only service](secure_service/README.md) · [Dataset card](datasets/README.md) · [Production SOP](docs/PRODUCTION_SOP.md) · [Security acceptance](docs/SECURITY_ACCEPTANCE.md). Four synthetic domains, record ACLs, host-bound proposals, persistent replay/budget controls, local audit chain. Run `python -m unittest -v secure_service.test_service`, `python -m secure_service.smoke_http` and `python -m secure_service.benchmark`. Not production-certified or deployed.
