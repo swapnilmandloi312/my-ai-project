@@ -1,0 +1,30 @@
+name: Equivalent policy comparison
+on:
+  pull_request:
+    paths:
+      - 'research/opa/**'
+      - 'research/opa_compare.py'
+      - '.github/workflows/opa-compare.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: open-policy-agent/setup-opa@b2b258e089860efaadaaf71bf6e3aecb4a3eeff1
+        with:
+          version: '1.12.2'
+      - run: opa version
+      - run: python research/opa_compare.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: opa-comparison
+          path: research/opa-results.json

@@ -1,0 +1,10 @@
+agent InvoiceReview
+model host_selected
+budget_usd 0.10
+max_steps 5
+allow lookup_invoice
+allow prepare_report
+deny send_email
+require approval prepare_report
+require verified_sources 2
+on_failure stop
