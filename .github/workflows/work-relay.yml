@@ -1,0 +1,26 @@
+name: Work Relay acceptance
+on:
+  pull_request:
+    paths:
+      - 'swapnil_ai_labs/work_relay.py'
+      - 'swapnil_ai_labs/relay_http.py'
+      - 'swapnil_ai_labs/test_work_relay.py'
+      - 'swapnil_ai_labs/test_relay_http.py'
+      - '.github/workflows/work-relay.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    strategy:
+      matrix:
+        python: ['3.11','3.13']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m unittest -v swapnil_ai_labs.test_work_relay swapnil_ai_labs.test_relay_http
