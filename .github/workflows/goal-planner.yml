@@ -1,0 +1,47 @@
+name: Goal planner model evidence
+on:
+  pull_request:
+    paths:
+      - 'swapnil_ai_labs/goal_planner.py'
+      - 'swapnil_ai_labs/goal_broker.py'
+      - 'swapnil_ai_labs/test_goal_planner.py'
+      - 'research/goal_planning_benchmark.py'
+      - '.github/workflows/goal-planner.yml'
+permissions:
+  contents: read
+jobs:
+  unit:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        python: ['3.11','3.13']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m unittest -v swapnil_ai_labs.test_goal_planner swapnil_ai_labs.test_goal_broker swapnil_ai_labs.test_goal_queue
+  model:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    strategy:
+      matrix:
+        model: [qwen, smollm]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install torch==2.7.1 --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install transformers==4.53.3 safetensors==0.5.3
+      - run: python research/goal_planning_benchmark.py
+        env:
+          BENCHMARK_MODEL: ${{ matrix.model }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: goal-plans-${{ matrix.model }}
+          path: research/goal-plans-${{ matrix.model }}.json
