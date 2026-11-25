@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Swapnil AI Labs proposal v1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "action",
+    "invoice"
+  ],
+  "properties": {
+    "version": {
+      "const": "1.0"
+    },
+    "action": {
+      "const": "lookup_invoice"
+    },
+    "invoice": {
+      "type": "string",
+      "pattern": "^INV-[A-Za-z0-9-]+$",
+      "minLength": 5,
+      "maxLength": 32
+    }
+  }
+}
