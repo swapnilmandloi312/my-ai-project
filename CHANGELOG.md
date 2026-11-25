@@ -1,4 +1,8 @@
 # Changelog
+## 0.8.0 — secure read-only release candidate
+- Authenticated WSGI reference, scoped records, host-bound proposals, persistent quotas, replay protection and audit-chain verification.
+- Four synthetic categories, 480 labelled cases, HTTP smoke tests and production SOP.
+
 ## 0.7.0 — open-source experimental preview
 - MIT license, contributor workflow, research proposal and PR templates.
 - Scoped exact cache with lexical suggestions, bounded knowledge graph, extractive compression, local mailbox and offline candidate acceptance gate.
