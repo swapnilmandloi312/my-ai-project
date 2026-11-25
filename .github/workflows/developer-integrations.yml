@@ -24,3 +24,5 @@ jobs:
       - run: python -m integrations.test_sdk
       - run: pip install mcp==1.30.0
       - run: python -m integrations.test_mcp_stdio
+      - run: python -m unittest -v integrations.test_bound_proposal
+      - run: python research/replay_model_outputs.py
