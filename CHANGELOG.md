@@ -1,4 +1,9 @@
 # Changelog
+## 0.7.0 — open-source experimental preview
+- MIT license, contributor workflow, research proposal and PR templates.
+- Scoped exact cache with lexical suggestions, bounded knowledge graph, extractive compression, local mailbox and offline candidate acceptance gate.
+- Cross-version Python checks and industry collaboration playbook.
+
 ## 0.6.0 — proposed experimental engineering tools
 - Fixed-stage workflow compiler, evaluation metrics, rule-based debugger and aggregate observability.
 - Integrated six-case synthetic engineering demo and twelve regression tests.
