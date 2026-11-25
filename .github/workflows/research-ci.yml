@@ -13,4 +13,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - run: python -m unittest -v test_agent_language.py tests/test_gateway.py
+      - run: python -m unittest -v test_agent_language.py
+      - run: python -m unittest discover -v -s tests
+      - run: python -m integrations.pilot
