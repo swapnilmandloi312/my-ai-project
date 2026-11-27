@@ -44,3 +44,11 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/test_health_fixture.sql
           psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/003_hourly_runtime_health.sql
           psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/test_hourly_runtime_health.sql
+          psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/004_scoped_hourly_worker.sql
+          psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/test_scoped_worker_fixture.sql
+          PGUSER=sal_hourly_worker PGPASSWORD=synthetic-ci-worker-only python -m swapnil_ai_labs.cloud_worker --scoped --batch 2 --record-run 100:1
+          PGUSER=sal_hourly_worker PGPASSWORD=synthetic-ci-worker-only python -m swapnil_ai_labs.cloud_worker --scoped --batch 2 --record-run 100:1
+          if PGUSER=sal_hourly_worker PGPASSWORD=synthetic-ci-worker-only psql -X -v ON_ERROR_STOP=1 -c "SELECT sal_ops.claim_job('other-workspace')"; then exit 1; fi
+          if PGUSER=sal_hourly_worker PGPASSWORD=synthetic-ci-worker-only psql -X -v ON_ERROR_STOP=1 -c "SELECT * FROM sal_ops.jobs"; then exit 1; fi
+          if PGUSER=sal_hourly_worker PGPASSWORD=synthetic-ci-worker-only psql -X -v ON_ERROR_STOP=1 -c "SELECT sal_ops.hourly_worker_report('100:2','{}')"; then exit 1; fi
+          psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/test_scoped_worker_verify.sql
