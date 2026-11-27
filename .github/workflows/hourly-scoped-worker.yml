@@ -1,0 +1,42 @@
+name: Hourly scoped synthetic worker
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: swapnil-ai-labs-hourly-worker
+  cancel-in-progress: false
+jobs:
+  worker:
+    if: github.ref == 'refs/heads/main' && vars.SWAPNIL_WORKER_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    environment: production-worker
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Run bounded approved synthetic jobs
+        env:
+          PGHOST: ${{ secrets.SAL_WORKER_PGHOST }}
+          PGUSER: ${{ secrets.SAL_WORKER_PGUSER }}
+          PGPASSWORD: ${{ secrets.SAL_WORKER_PGPASSWORD }}
+          WORKER_CA: ${{ secrets.SAL_WORKER_CA_PEM }}
+          PGPORT: '5432'
+          PGDATABASE: postgres
+          PGSSLMODE: verify-full
+          PGCONNECT_TIMEOUT: '8'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$PGHOST" && test -n "$PGUSER" && test -n "$PGPASSWORD" && test -n "$WORKER_CA"
+          case "$PGUSER" in sal_hourly_worker|sal_hourly_worker.*) ;; *) exit 1 ;; esac
+          umask 077
+          ca="$(mktemp)"
+          trap 'rm -f "$ca"' EXIT
+          printf '%s\n' "$WORKER_CA" > "$ca"
+          unset WORKER_CA
+          export PGSSLROOTCERT="$ca"
+          python3 -m swapnil_ai_labs.cloud_worker --scoped --batch 20 --record-run "$GITHUB_RUN_ID:$GITHUB_RUN_ATTEMPT"
