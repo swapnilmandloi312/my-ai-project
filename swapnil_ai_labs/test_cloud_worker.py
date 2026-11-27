@@ -26,6 +26,7 @@ def claim():
     with patch.dict(os.environ,{"PGOPTIONS":"-c role=sal_job_worker"}):
         return Queue(WS).claim()
 
+@unittest.skipUnless(os.environ.get('PGDATABASE')=='sal_test' and os.environ.get('PGHOST')=='127.0.0.1', 'disposable PostgreSQL fixture required')
 class CloudAcceptance(unittest.TestCase):
     def test_lifecycle(self):
         self.assertEqual(os.environ.get("PGDATABASE"),"sal_test")
