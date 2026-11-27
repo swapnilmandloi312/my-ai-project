@@ -41,3 +41,6 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/test_queue_fixture.sql
           psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/002_synthetic_job_queue.sql
           python -m unittest -v swapnil_ai_labs.test_cloud_worker
+          psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/test_health_fixture.sql
+          psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/003_hourly_runtime_health.sql
+          psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/test_hourly_runtime_health.sql
