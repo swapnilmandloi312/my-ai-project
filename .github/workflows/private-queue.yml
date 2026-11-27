@@ -52,3 +52,5 @@ jobs:
           if PGUSER=sal_hourly_worker PGPASSWORD=synthetic-ci-worker-only psql -X -v ON_ERROR_STOP=1 -c "SELECT * FROM sal_ops.jobs"; then exit 1; fi
           if PGUSER=sal_hourly_worker PGPASSWORD=synthetic-ci-worker-only psql -X -v ON_ERROR_STOP=1 -c "SELECT sal_ops.hourly_worker_report('100:2','{}')"; then exit 1; fi
           psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/test_scoped_worker_verify.sql
+          psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/005_private_spend_gate.sql
+          psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/test_private_spend_gate.sql
