@@ -16,3 +16,5 @@ jobs:
       - run: node control-center/test.mjs
       - run: node control-center/cloud-test.mjs
       - run: node --check control-center/cloud.mjs
+
+      - run: node --check control-center/queue-ui.mjs
