@@ -10,6 +10,7 @@ on:
         options:
           - synthetic
           - evidence-canary
+          - operations-canary
         default: synthetic
 permissions:
   contents: read
@@ -20,9 +21,9 @@ jobs:
   worker:
     if: >-
       github.ref == 'refs/heads/main' &&
-      ((github.event_name == 'workflow_dispatch' && inputs.mode == 'evidence-canary') ||
+      ((github.event_name == 'workflow_dispatch' && (inputs.mode == 'evidence-canary' || inputs.mode == 'operations-canary')) ||
        vars.SWAPNIL_WORKER_ENABLED == 'true' ||
-       (github.event_name == 'schedule' && vars.SWAPNIL_EVIDENCE_HOURLY == 'true'))
+       (github.event_name == 'schedule' && (vars.SWAPNIL_EVIDENCE_HOURLY == 'true' || vars.SWAPNIL_OPERATIONS_HOURLY == 'true')))
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     environment: production-worker
@@ -36,6 +37,7 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           EVIDENCE_SCHEDULES: ${{ vars.SWAPNIL_EVIDENCE_SCHEDULES }}
           EVIDENCE_HOURLY: ${{ vars.SWAPNIL_EVIDENCE_HOURLY }}
+          OPERATIONS_HOURLY: ${{ vars.SWAPNIL_OPERATIONS_HOURLY }}
           SAL_GITHUB_READ_TOKEN: ${{ github.token }}
           PGHOST: ${{ secrets.SAL_WORKER_PGHOST }}
           PGUSER: ${{ secrets.SAL_WORKER_PGUSER }}
@@ -58,11 +60,22 @@ jobs:
           export PGSSLROOTCERT="$ca"
           if [[ "$REQUESTED_MODE" == evidence-canary ]]; then
             python3 -m swapnil_ai_labs.evidence_worker --public-github --batch 1
-          elif [[ "$EVENT_NAME" == schedule && "$EVIDENCE_HOURLY" == true ]]; then
-            if [[ "$EVIDENCE_SCHEDULES" == true ]]; then
-              psql -X -qAt -v ON_ERROR_STOP=1 -c 'SELECT sal_ops.materialize_github_evidence_schedules()' >/dev/null
+          elif [[ "$REQUESTED_MODE" == operations-canary ]]; then
+            env -u SAL_GITHUB_READ_TOKEN python3 -m swapnil_ai_labs.evidence_worker --operations --batch 1
+          elif [[ "$EVENT_NAME" == schedule && ( "$EVIDENCE_HOURLY" == true || "$OPERATIONS_HOURLY" == true ) ]]; then
+            batch=4
+            if [[ "$EVIDENCE_HOURLY" == true && "$OPERATIONS_HOURLY" == true ]]; then
+              batch=2
             fi
-            python3 -m swapnil_ai_labs.evidence_worker --public-github --batch 4
+            if [[ "$EVIDENCE_HOURLY" == true ]]; then
+              if [[ "$EVIDENCE_SCHEDULES" == true ]]; then
+                psql -X -qAt -v ON_ERROR_STOP=1 -c 'SELECT sal_ops.materialize_github_evidence_schedules()' >/dev/null
+              fi
+              python3 -m swapnil_ai_labs.evidence_worker --public-github --batch "$batch"
+            fi
+            if [[ "$OPERATIONS_HOURLY" == true ]]; then
+              env -u SAL_GITHUB_READ_TOKEN python3 -m swapnil_ai_labs.evidence_worker --operations --batch "$batch"
+            fi
           else
             unset SAL_GITHUB_READ_TOKEN
             python3 -m swapnil_ai_labs.cloud_worker --scoped --batch 20 --record-run "$GITHUB_RUN_ID:$GITHUB_RUN_ATTEMPT"
