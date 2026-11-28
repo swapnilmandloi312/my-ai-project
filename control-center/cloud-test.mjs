@@ -80,3 +80,16 @@ assert.equal(policyCalls[0][1].p_dependency,null);
 assert.equal(policyCalls[1][1].p_occurrences,2);
 await policyApi.revokeScheduleApproval(token,policy.key);
 assert.equal(policyCalls[2][1].p_occurrences,0);
+
+const intakeCalls=[];
+const intake=cloudClient(c,async(u,o)=>{
+  intakeCalls.push(JSON.parse(o.body));
+  return {ok:true,status:200,json:async()=>jobId};
+});
+await intake.submitEvidence(token,"research","10.1093/MIND/LIX.236.433");
+await intake.submitEvidence(token,"security","");
+await intake.submitEvidence(token,"backend",revision);
+assert.deepEqual(intakeCalls.map(x=>x.p_refs),[{doi:"10.1093/mind/lix.236.433"},{snapshot:"workspace"},{source_revision:revision}]);
+await assert.rejects(()=>intake.submitEvidence(token,"finance",""),/Unsupported/);
+await assert.rejects(()=>intake.submitEvidence(token,"research","https://example.com"),/valid DOI/);
+assert.equal(intakeCalls.length,3);
