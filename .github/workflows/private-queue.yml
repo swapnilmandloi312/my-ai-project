@@ -111,3 +111,43 @@ jobs:
             THEN RAISE EXCEPTION 'live Github dashboard records missing'; END IF;
           END $$;
           SQL
+      - name: Persist seven distinct operations reports under scoped leases
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/011_scoped_operations_evidence.sql
+          psql -X -v ON_ERROR_STOP=1 <<'SQL'
+          UPDATE sal_ops.job_limits SET attempt_limit=attempts_used+7
+          WHERE workspace_id='11111111-1111-1111-1111-111111111111';
+          INSERT INTO sal_ops.agent_profiles VALUES
+            ('security',ARRAY['snapshot']),('privacy',ARRAY['snapshot']),('compliance',ARRAY['snapshot']),('it_ops',ARRAY['snapshot']),('observability',ARRAY['snapshot']),('incident_response',ARRAY['snapshot']),('integration',ARRAY['snapshot'])
+          ON CONFLICT DO NOTHING;
+          INSERT INTO sal_ops.agent_controls(workspace_id,category,paused)
+          SELECT '11111111-1111-1111-1111-111111111111',category,false
+          FROM sal_ops.agent_profiles WHERE category IN ('security','privacy','compliance','it_ops','observability','incident_response','integration')
+          ON CONFLICT (workspace_id,category) DO UPDATE SET paused=false;
+          SET ROLE authenticated;
+          SELECT set_config('request.jwt.claim.sub','aaaaaaaa-0000-0000-0000-000000000001',false);
+          SELECT public.sal_job_command('test-workspace','approve',jsonb_build_object('id',
+            public.sal_submit_evidence_job('test-workspace',c,'operations-ci-'||c,'{"snapshot":"workspace"}')))
+          FROM unnest(ARRAY['security','privacy','compliance','it_ops','observability','incident_response','integration']) AS categories(c);
+          SQL
+          if PGUSER=sal_hourly_worker PGPASSWORD=synthetic-ci-worker-only psql -X -v ON_ERROR_STOP=1 -c "SELECT sal_ops.operations_evidence(gen_random_uuid(),gen_random_uuid())"; then exit 1; fi
+          PGUSER=sal_hourly_worker PGPASSWORD=synthetic-ci-worker-only python -m swapnil_ai_labs.evidence_worker --operations --batch 4
+          PGUSER=sal_hourly_worker PGPASSWORD=synthetic-ci-worker-only python -m swapnil_ai_labs.evidence_worker --operations --batch 3
+          psql -X -v ON_ERROR_STOP=1 <<'SQL'
+          DO $$ BEGIN
+            IF has_function_privilege('authenticated','sal_ops.operations_evidence(uuid,uuid)','EXECUTE')
+               OR (SELECT count(*) FROM sal_ops.agent_deliverables d
+                   JOIN sal_ops.jobs j ON j.id=d.job_id
+                   WHERE j.approved_by IS NOT NULL AND j.state='succeeded'
+                   AND j.request_key='operations-ci-'||j.category
+                   AND d.body->'source_evidence'->>'kind'=CASE d.category WHEN 'security' THEN 'execution_control_audit' WHEN 'privacy' THEN 'deliverable_access_review' WHEN 'compliance' THEN 'approval_traceability' WHEN 'it_ops' THEN 'agent_control_inventory' WHEN 'observability' THEN 'queue_health_window' WHEN 'incident_response' THEN 'queue_incident_triage' WHEN 'integration' THEN 'adapter_delivery_inventory' END
+                   AND EXISTS (SELECT FROM sal_ops.job_events e WHERE e.job_id=j.id AND e.event='succeeded'))<>7
+            THEN RAISE EXCEPTION 'operations evidence or scope check failed'; END IF;
+          END $$;
+          SET ROLE authenticated;
+          SELECT set_config('request.jwt.claim.sub','aaaaaaaa-0000-0000-0000-000000000001',false);
+          DO $$ BEGIN
+            IF (SELECT count(*) FROM jsonb_array_elements(public.sal_agent_deliverable_index('test-workspace')) d
+              WHERE d->>'tool'='workspace_operations')<>7 THEN RAISE EXCEPTION 'operations index incomplete'; END IF;
+          END $$;
+          SQL
