@@ -34,6 +34,7 @@ jobs:
         env:
           REQUESTED_MODE: ${{ inputs.mode }}
           EVENT_NAME: ${{ github.event_name }}
+          EVIDENCE_SCHEDULES: ${{ vars.SWAPNIL_EVIDENCE_SCHEDULES }}
           EVIDENCE_HOURLY: ${{ vars.SWAPNIL_EVIDENCE_HOURLY }}
           SAL_GITHUB_READ_TOKEN: ${{ github.token }}
           PGHOST: ${{ secrets.SAL_WORKER_PGHOST }}
@@ -58,6 +59,9 @@ jobs:
           if [[ "$REQUESTED_MODE" == evidence-canary ]]; then
             python3 -m swapnil_ai_labs.evidence_worker --public-github --batch 1
           elif [[ "$EVENT_NAME" == schedule && "$EVIDENCE_HOURLY" == true ]]; then
+            if [[ "$EVIDENCE_SCHEDULES" == true ]]; then
+              psql -X -qAt -v ON_ERROR_STOP=1 -c 'SELECT sal_ops.materialize_github_evidence_schedules()' >/dev/null
+            fi
             python3 -m swapnil_ai_labs.evidence_worker --public-github --batch 4
           else
             unset SAL_GITHUB_READ_TOKEN
