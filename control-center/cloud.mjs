@@ -1,6 +1,6 @@
-import {cloudClient,evidenceContracts} from "./cloud-core.mjs?v=evidence-intake-1";import config from "./cloud-config.mjs?v=evidence-intake-1";import {renderQueue,clearQueue} from "./queue-ui.mjs?v=evidence-intake-1";
+import {cloudClient,evidenceContracts} from "./cloud-core.mjs?v=readonly-batch-1";import config from "./cloud-config.mjs?v=readonly-batch-1";import {renderQueue,clearQueue} from "./queue-ui.mjs?v=readonly-batch-1";
 const $=id=>document.getElementById(id);let client,token="",busy=false;
-function note(s){$("notice").textContent=s}function clear(){token="";$("recurring-evidence").hidden=true;$("recurring-evidence").reset();$("recurring-status").textContent="";$("agent-inventory").replaceChildren();$("inventory-status").textContent="";$("engineering-evidence").hidden=true;$("engineering-evidence").reset();$("founder-action-status").textContent="";clearQueue();$("workspace").hidden=true;$("cloud-tasks").replaceChildren();$("cloud-reports").replaceChildren();$("cloud-deliverables").replaceChildren();$("deliverable-status").textContent="";$("cloud-schedules").replaceChildren();$("schedule-status").textContent=""}function controls(){ $("signin").disabled=busy||!!token||!client;$("refresh-cloud").disabled=busy||!token;$("signout").disabled=busy||!token}
+function note(s){$("notice").textContent=s}function clear(){token="";$("evidence-batch").hidden=true;$("evidence-batch").reset();$("batch-status").textContent="";$("recurring-evidence").hidden=true;$("recurring-evidence").reset();$("recurring-status").textContent="";$("agent-inventory").replaceChildren();$("inventory-status").textContent="";$("engineering-evidence").hidden=true;$("engineering-evidence").reset();$("founder-action-status").textContent="";clearQueue();$("workspace").hidden=true;$("cloud-tasks").replaceChildren();$("cloud-reports").replaceChildren();$("cloud-deliverables").replaceChildren();$("deliverable-status").textContent="";$("cloud-schedules").replaceChildren();$("schedule-status").textContent=""}function controls(){ $("signin").disabled=busy||!!token||!client;$("refresh-cloud").disabled=busy||!token;$("signout").disabled=busy||!token}
 function render(s){$("workspace-title").textContent=s.workspace+" · "+s.role;$("counts").textContent=s.profiles+" profiles · "+s.paused+" cloud controls paused · "+s.tasks.length+" tasks";for(const [id,rows,format] of [["cloud-tasks",s.tasks,t=>[t.title,t.priority+" · "+t.status]],["cloud-reports",s.reports,r=>[r.source+" · "+r.status,JSON.stringify(r.summary)]]]){const root=$(id);root.replaceChildren();for(const item of rows){const d=document.createElement("article");d.className="gate";const [a,b]=format(item);const h=document.createElement("strong");h.textContent=a;const p=document.createElement("span");p.textContent=b;d.append(h,p);root.append(d)}}$("workspace").hidden=false}
 async function renderDeliverables(){
   const root=$("cloud-deliverables");
@@ -52,6 +52,7 @@ async function refresh(){
   render(snapshot);
   $("engineering-evidence").hidden=!(config.queueEnabled===true && snapshot.role==="founder");
   $("recurring-evidence").hidden=$("engineering-evidence").hidden;
+  $("evidence-batch").hidden=$("engineering-evidence").hidden;
   $("founder-action-status").textContent=config.queueEnabled!==true?"Job submissions are disabled for this deployment.":snapshot.role!=="founder"?"Engineering submissions require founder access.":"";
 const [deliverables]=await Promise.all([renderDeliverables(),renderSchedules()]);
   if(config?.queueEnabled===true){
@@ -74,6 +75,14 @@ function renderInventory(queue,deliverables){
     card.append(heading,detail);root.append(card);
   }
 }
+$("evidence-batch").onsubmit=e=>{
+  e.preventDefault();
+  if($("evidence-batch").hidden)return;
+  const ids=$("batch-job-ids").value.trim().split(/[\s,]+/);
+  if(!confirm("Approve this batch of "+ids.length+" pending read-only evidence jobs?"))return;
+  act(async()=>{await client.approveEvidenceBatch(token,ids);await refresh();
+    $("batch-status").textContent=ids.length+" jobs approved and queued.";});
+};
 $("recurring-evidence").onsubmit=e=>{
   e.preventDefault();
   if($("recurring-evidence").hidden)return;
@@ -97,9 +106,14 @@ $("engineering-evidence").onsubmit=e=>{
   const category=$("evidence-category").value;
   const revision=$("engineering-revision").value.trim();
   act(async()=>{
-    const id=await client.submitEvidence(token,category,revision);
-    await refresh();
-    $("founder-action-status").textContent="Job "+id+" submitted for separate approval.";
+    try{
+      const id=await client.submitEvidence(token,category,revision);
+      $("founder-action-status").textContent="Job "+id+" submitted for separate approval.";
+      try{await refresh()}catch(e){note("Job saved; refresh failed: "+e.message)}
+      $("founder-action-status").textContent="Job "+id+" submitted for separate approval.";
+    }catch(e){
+      $("founder-action-status").textContent="Evidence submission failed: "+e.message;
+    }
   });
 };
 $("evidence-category").onchange=()=>{

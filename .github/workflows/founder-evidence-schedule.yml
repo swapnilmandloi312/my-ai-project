@@ -34,6 +34,6 @@ jobs:
       - name: Verify approvals, dependency gates and idempotent job materialization
         run: |
           cd deployment/supabase
-          for script in test_bootstrap.sql test_queue_fixture.sql 002_synthetic_job_queue.sql test_health_fixture.sql 003_hourly_runtime_health.sql 004_scoped_hourly_worker.sql 006_agent_deliverables.sql 007_leased_evidence_jobs.sql 008_github_evidence_claim.sql 010_founder_evidence_schedules.sql test_founder_evidence_schedules.sql 012_recurring_evidence_approval.sql test_recurring_evidence_approval.sql; do
+          for script in test_bootstrap.sql test_queue_fixture.sql 002_synthetic_job_queue.sql test_health_fixture.sql 003_hourly_runtime_health.sql 004_scoped_hourly_worker.sql 006_agent_deliverables.sql 007_leased_evidence_jobs.sql 008_github_evidence_claim.sql 010_founder_evidence_schedules.sql test_founder_evidence_schedules.sql 012_recurring_evidence_approval.sql test_recurring_evidence_approval.sql 014_readonly_batch_approval.sql test_readonly_batch_approval.sql; do
             psql -X -v ON_ERROR_STOP=1 -f "$script"
           done
