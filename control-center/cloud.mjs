@@ -1,6 +1,6 @@
-import {cloudClient} from "./cloud-core.mjs?v=founder-form-2";import config from "./cloud-config.mjs?v=founder-form-2";import {renderQueue,clearQueue} from "./queue-ui.mjs?v=founder-form-2";
+import {cloudClient} from "./cloud-core.mjs?v=delegation-1";import config from "./cloud-config.mjs?v=delegation-1";import {renderQueue,clearQueue} from "./queue-ui.mjs?v=delegation-1";
 const $=id=>document.getElementById(id);let client,token="",busy=false;
-function note(s){$("notice").textContent=s}function clear(){token="";$("engineering-evidence").hidden=true;$("engineering-evidence").reset();$("founder-action-status").textContent="";clearQueue();$("workspace").hidden=true;$("cloud-tasks").replaceChildren();$("cloud-reports").replaceChildren();$("cloud-deliverables").replaceChildren();$("deliverable-status").textContent="";$("cloud-schedules").replaceChildren();$("schedule-status").textContent=""}function controls(){ $("signin").disabled=busy||!!token||!client;$("refresh-cloud").disabled=busy||!token;$("signout").disabled=busy||!token}
+function note(s){$("notice").textContent=s}function clear(){token="";$("recurring-evidence").hidden=true;$("recurring-evidence").reset();$("recurring-status").textContent="";$("agent-inventory").replaceChildren();$("inventory-status").textContent="";$("engineering-evidence").hidden=true;$("engineering-evidence").reset();$("founder-action-status").textContent="";clearQueue();$("workspace").hidden=true;$("cloud-tasks").replaceChildren();$("cloud-reports").replaceChildren();$("cloud-deliverables").replaceChildren();$("deliverable-status").textContent="";$("cloud-schedules").replaceChildren();$("schedule-status").textContent=""}function controls(){ $("signin").disabled=busy||!!token||!client;$("refresh-cloud").disabled=busy||!token;$("signout").disabled=busy||!token}
 function render(s){$("workspace-title").textContent=s.workspace+" · "+s.role;$("counts").textContent=s.profiles+" profiles · "+s.paused+" cloud controls paused · "+s.tasks.length+" tasks";for(const [id,rows,format] of [["cloud-tasks",s.tasks,t=>[t.title,t.priority+" · "+t.status]],["cloud-reports",s.reports,r=>[r.source+" · "+r.status,JSON.stringify(r.summary)]]]){const root=$(id);root.replaceChildren();for(const item of rows){const d=document.createElement("article");d.className="gate";const [a,b]=format(item);const h=document.createElement("strong");h.textContent=a;const p=document.createElement("span");p.textContent=b;d.append(h,p);root.append(d)}}$("workspace").hidden=false}
 async function renderDeliverables(){
   const root=$("cloud-deliverables");
@@ -18,6 +18,7 @@ async function renderDeliverables(){
       article.append(title,detail);
       root.append(article);
     }
+    return rows;
   }catch(e){
     $("deliverable-status").textContent="Deliverable index unavailable: "+e.message;
   }
@@ -50,8 +51,45 @@ async function refresh(){
   const snapshot=await client.snapshot(token);
   render(snapshot);
   $("engineering-evidence").hidden=!(config.queueEnabled===true && snapshot.role==="founder");
+  $("recurring-evidence").hidden=$("engineering-evidence").hidden;
   $("founder-action-status").textContent=config.queueEnabled!==true?"Job submissions are disabled for this deployment.":snapshot.role!=="founder"?"Engineering submissions require founder access.":"";
-await Promise.all([renderDeliverables(),renderSchedules()]);if(config?.queueEnabled===true){try{await renderQueue(client,token,act)}catch(e){clearQueue();note("Private report loaded; job queue unavailable: "+e.message)}}}
+const [deliverables]=await Promise.all([renderDeliverables(),renderSchedules()]);
+  if(config?.queueEnabled===true){
+    try{renderInventory(await renderQueue(client,token,act),deliverables)}
+    catch(e){clearQueue();$("agent-inventory").replaceChildren();$("inventory-status").textContent="Agent inventory unavailable.";note("Private report loaded; job queue unavailable: "+e.message)}
+  }
+}
+function renderInventory(queue,deliverables){
+  const root=$("agent-inventory");
+  root.replaceChildren();
+  $("inventory-status").textContent=queue.profiles.length+" profiles · "+(deliverables?.length??"unknown")+" recent stored deliverables";
+  for(const profile of queue.profiles){
+    const job=queue.jobs.find(row=>row.category===profile.category);
+    const evidence=deliverables?.find(row=>row.category===profile.category);
+    const card=document.createElement("article"), heading=document.createElement("strong"), detail=document.createElement("span");
+    card.className="gate";
+    heading.textContent=profile.category+" · "+(profile.paused?"Paused":"Enabled");
+    detail.textContent=(job?"Latest job: "+job.state+" · "+job.id:"No recent job")+
+      (evidence?" · Deliverable "+evidence.tool+" · "+evidence.job_id:deliverables?" · No recent stored deliverable":" · Deliverable index unavailable");
+    card.append(heading,detail);root.append(card);
+  }
+}
+$("recurring-evidence").onsubmit=e=>{
+  e.preventDefault();
+  if($("recurring-evidence").hidden)return;
+  const policy={key:$("schedule-key").value.trim(),template:$("schedule-template").value.trim(),
+    dependency:$("schedule-dependency").value.trim(),interval:Number($("schedule-interval").value),
+    occurrences:Number($("schedule-occurrences").value),hours:Number($("schedule-expiry").value)};
+  if(!confirm("Authorize up to "+policy.occurrences+" repeats of this approved GitHub job within "+policy.hours+" hours?"))return;
+  act(async()=>{const id=await client.authorizeEngineeringSchedule(token,policy);await refresh();
+    $("recurring-status").textContent="Bounded approval saved for schedule "+id;});
+};
+$("revoke-recurring").onclick=()=>{
+  if($("recurring-evidence").hidden)return;
+  const key=$("schedule-key").value.trim();
+  if(!key||!confirm("Revoke future automatic approvals for "+key+"? Already queued jobs require a separate stop."))return;
+  act(async()=>{await client.revokeScheduleApproval(token,key);await refresh();$("recurring-status").textContent="Future approvals revoked.";});
+};
 async function act(fn){if(busy)return;busy=true;controls();try{await fn()}catch(e){clear();note(e.message)}finally{busy=false;controls()}}
 $("engineering-evidence").onsubmit=e=>{
   e.preventDefault();
