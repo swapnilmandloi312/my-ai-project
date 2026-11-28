@@ -57,3 +57,5 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/test_scoped_worker_verify.sql
           psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/005_private_spend_gate.sql
           psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/test_private_spend_gate.sql
+          psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/006_agent_deliverables.sql
+          psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/test_agent_deliverables.sql
