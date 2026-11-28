@@ -17,6 +17,8 @@ jobs:
           persist-credentials: false
       - run: python3 -m unittest -v swapnil_ai_labs.test_agent_acceptance swapnil_ai_labs.test_evidence_tools
       - name: Read the approved public repository
+        env:
+          SAL_GITHUB_READ_TOKEN: ${{ github.token }}
         run: |
           python3 - <<'PY'
           from swapnil_ai_labs.evidence_tools import encode_deliverable, execute_read_only
