@@ -59,3 +59,7 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/test_private_spend_gate.sql
           psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/006_agent_deliverables.sql
           psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/test_agent_deliverables.sql
+          psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/007_leased_evidence_jobs.sql
+          psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/test_evidence_job_fixture.sql
+          PGUSER=sal_hourly_worker PGPASSWORD=synthetic-ci-worker-only python -m swapnil_ai_labs.evidence_worker
+          psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/test_evidence_job_verify.sql
