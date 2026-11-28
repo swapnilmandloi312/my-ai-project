@@ -66,3 +66,17 @@ role="viewer";
 document.getElementById("refresh-cloud").onclick();
 await tick();
 assert.equal(document.getElementById("engineering-evidence").hidden,true);
+
+const policyCalls=[];
+const policyApi=cloudClient(c,async(u,o)=>{
+ policyCalls.push([u,JSON.parse(o.body)]);
+ return {ok:true,status:200,json:async()=>policyCalls.length===1?jobId:true};
+});
+const policy={key:"engineering-repeat",template:jobId,dependency:"",interval:1,occurrences:2,hours:3};
+await assert.rejects(()=>policyApi.authorizeEngineeringSchedule(token,{...policy,occurrences:25}),/limits/);
+assert.equal(policyCalls.length,0);
+assert.equal(await policyApi.authorizeEngineeringSchedule(token,policy),jobId);
+assert.equal(policyCalls[0][1].p_dependency,null);
+assert.equal(policyCalls[1][1].p_occurrences,2);
+await policyApi.revokeScheduleApproval(token,policy.key);
+assert.equal(policyCalls[2][1].p_occurrences,0);
