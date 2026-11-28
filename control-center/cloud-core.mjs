@@ -18,7 +18,9 @@ if(field==="doi"){
 }
 if(field==="snapshot")value="workspace";
 const id=await call("/rest/v1/rpc/sal_submit_evidence_job",{
-  p_slug:"swapnil-ai-labs",p_category:category,p_key:category+":"+value,p_refs:{[field]:value}
+  p_slug:"swapnil-ai-labs",p_category:category,
+  p_key:category+":"+(field==="snapshot"?new Date().toISOString().slice(0,13):value),
+  p_refs:{[field]:value}
 },token);
 if(typeof id!=="string"||!/^[0-9a-f-]{36}$/.test(id))throw Error("Invalid evidence job ID");
 return id;
