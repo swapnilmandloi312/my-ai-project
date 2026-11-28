@@ -34,7 +34,7 @@ GRANT EXECUTE ON FUNCTION public.sal_set_recurring_evidence_approval(text,text,i
 CREATE OR REPLACE FUNCTION sal_ops.materialize_github_evidence_schedules()
 RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
 DECLARE w uuid; lim sal_ops.job_limits%ROWTYPE; plan record; new_job uuid;
-        slots integer; authorization uuid; materialized integer:=0; tick timestamptz:=clock_timestamp();
+        slots integer; policy_approver uuid; materialized integer:=0; tick timestamptz:=clock_timestamp();
 BEGIN
  SELECT id INTO STRICT w FROM sal_ops.workspaces WHERE slug=sal_ops.bound_worker_slug();
  SELECT * INTO STRICT lim FROM sal_ops.job_limits WHERE workspace_id=w FOR UPDATE;
@@ -58,22 +58,22 @@ BEGIN
   )
   ORDER BY s.next_due,s.id LIMIT least(slots,4)
  LOOP
-  authorization:=NULL;
+  policy_approver:=NULL;
   IF plan.approval_remaining>0 AND plan.approval_until>tick THEN
-   authorization:=plan.approval_founder;
+   policy_approver:=plan.approval_founder;
   END IF;
   new_job:=gen_random_uuid();
   INSERT INTO sal_ops.jobs(id,workspace_id,category,request_key,parent_id,requested_by,evidence,delivery_tool,approved_by,state)
   VALUES(new_job,w,plan.category,'scheduled:'||new_job,plan.depends_on_job,
-         plan.created_by,plan.evidence,plan.delivery_tool,authorization,
-         CASE WHEN authorization IS NULL THEN 'pending' ELSE 'queued' END);
-  IF authorization IS NOT NULL THEN
+         plan.created_by,plan.evidence,plan.delivery_tool,policy_approver,
+         CASE WHEN policy_approver IS NULL THEN 'pending' ELSE 'queued' END);
+  IF policy_approver IS NOT NULL THEN
    INSERT INTO sal_ops.job_events(workspace_id,job_id,event,detail)
    VALUES(w,new_job,'recurring_approval',jsonb_build_object('schedule_id',plan.id,'remaining_after',plan.approval_remaining-1));
   END IF;
   UPDATE sal_ops.evidence_schedules
   SET last_job=new_job, next_due=tick+make_interval(hours=>plan.interval_hours),
-      approval_remaining=approval_remaining-CASE WHEN authorization IS NULL THEN 0 ELSE 1 END
+      approval_remaining=approval_remaining-CASE WHEN policy_approver IS NULL THEN 0 ELSE 1 END
   WHERE id=plan.id;
   materialized:=materialized+1;
  END LOOP;
