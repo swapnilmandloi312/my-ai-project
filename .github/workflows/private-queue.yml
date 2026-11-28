@@ -94,7 +94,7 @@ jobs:
           SELECT j.category,j.state,j.attempts,d.body->'source_evidence'->>'deliverable_type' AS deliverable_type
           FROM sal_ops.jobs j LEFT JOIN sal_ops.agent_deliverables d ON j.id=d.job_id
           WHERE j.request_key='github-ci-'||j.category ORDER BY j.category;
-          DO $ BEGIN
+          DO $$ BEGIN
             IF (SELECT count(*) FROM sal_ops.agent_deliverables d
                 JOIN sal_ops.jobs j ON j.id=d.job_id
                 WHERE j.state='succeeded' AND j.request_key='github-ci-'||j.category
