@@ -2,6 +2,7 @@
 
 import http.client
 import json
+import os
 import re
 
 
@@ -16,14 +17,18 @@ def public_revision_deliverable(category, revision):
         raise ValueError("full GitHub commit SHA required")
     connection = http.client.HTTPSConnection("api.github.com", timeout=5)
     try:
-        connection.request("GET", f"/repos/{REPOSITORY}/commits/{revision}?per_page=30", headers={
+        headers = {
             "Accept": "application/vnd.github+json",
             "User-Agent": "Swapnil-AI-Labs-Evidence-Worker",
             "X-GitHub-Api-Version": "2022-11-28",
-        })
+        }
+        token = os.environ.get("SAL_GITHUB_READ_TOKEN")
+        if token:
+            headers["Authorization"] = "Bearer " + token
+        connection.request("GET", f"/repos/{REPOSITORY}/commits/{revision}?per_page=30", headers=headers)
         response = connection.getresponse()
         if response.status != 200:
-            raise ValueError("public commit unavailable")
+            raise ValueError(f"public commit unavailable (HTTP {response.status})")
         raw = response.read(MAX_RESPONSE + 1)
         if len(raw) > MAX_RESPONSE:
             raise ValueError("public commit response exceeds limit")
