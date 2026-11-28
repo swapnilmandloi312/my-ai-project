@@ -1,6 +1,7 @@
-INSERT INTO sal_ops.agent_profiles VALUES ('research',ARRAY['hypothesis']);
+INSERT INTO sal_ops.agent_profiles VALUES ('research',ARRAY['hypothesis']) ON CONFLICT (category) DO NOTHING;
 INSERT INTO sal_ops.agent_controls(workspace_id,category,paused)
-VALUES('11111111-1111-1111-1111-111111111111','research',false);
+VALUES('11111111-1111-1111-1111-111111111111','research',false)
+ON CONFLICT (workspace_id,category) DO UPDATE SET paused=false;
 
 SET ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','aaaaaaaa-0000-0000-0000-000000000001',false);
