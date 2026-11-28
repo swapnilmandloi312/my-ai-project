@@ -4,4 +4,9 @@ if(!token)throw Error("Sign in first");
 const rows=await call("/rest/v1/rpc/sal_agent_deliverable_index",{p_slug:"swapnil-ai-labs"},token);
 if(!Array.isArray(rows)||rows.some(row=>!row||["job_id","category","tool","stored_at"].some(key=>typeof row[key]!=="string")))throw Error("Invalid deliverable index");
 return rows;
+},async schedules(token){
+if(!token)throw Error("Sign in first");
+const rows=await call("/rest/v1/rpc/sal_evidence_schedule_index",{p_slug:"swapnil-ai-labs"},token);
+if(!Array.isArray(rows)||rows.some(row=>!row||typeof row.schedule_key!=="string"||typeof row.category!=="string"||typeof row.enabled!=="boolean"||typeof row.next_due!=="string"||!Number.isInteger(row.interval_hours)))throw Error("Invalid schedule index");
+return rows;
 },async logout(token){if(token)await call("/auth/v1/logout?scope=local",{},token)}}}

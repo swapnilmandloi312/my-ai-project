@@ -13,3 +13,13 @@ await assert.rejects(()=>deliverableApi.deliverables(""),/Sign in/);
 assert.equal((await deliverableApi.deliverables(token))[0].job_id,"fixture-job");
 await assert.rejects(()=>noMembership.deliverables(token),/Invalid deliverable index/);
 console.log("Authenticated deliverable index tests passed");
+
+const scheduleApi=cloudClient(c,async(u,o)=>{
+  assert.equal(u,c.url+"/rest/v1/rpc/sal_evidence_schedule_index");
+  assert.equal(o.headers.Authorization,"Bearer fixture");
+  return {ok:true,status:200,json:async()=>[{schedule_key:"engineering-hourly",category:"engineering",enabled:true,interval_hours:1,next_due:"2026-11-28T00:00:00Z",last_job:"fixture-job",dependency_state:"succeeded"}]};
+});
+await assert.rejects(()=>scheduleApi.schedules(""),/Sign in/);
+assert.equal((await scheduleApi.schedules(token))[0].last_job,"fixture-job");
+await assert.rejects(()=>noMembership.schedules(token),/Invalid schedule index/);
+console.log("Authenticated schedule index tests passed");
