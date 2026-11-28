@@ -4,7 +4,7 @@ import json
 from types import MappingProxyType
 
 from swapnil_ai_labs.forty_profiles import PROFILES
-from swapnil_ai_labs.public_github_evidence import public_revision_deliverable
+from swapnil_ai_labs.public_github_evidence import GITHUB_CATEGORIES, public_revision_deliverable
 from swapnil_ai_labs.revision_evidence import revision_receipt
 
 
@@ -22,13 +22,13 @@ EXPORT_SCHEMAS = MappingProxyType({
 })
 TOOL_REGISTRY = MappingProxyType({
     **EXPORT_SCHEMAS,
-    "engineering": "git_revision",
-    "technical_writing": "git_revision",
+    **dict.fromkeys(GITHUB_CATEGORIES, "git_revision"),
 })
 
 
-def _references(category, payload):
-    if not isinstance(payload, dict) or not set(payload) <= set(PROFILES[category].checks):
+def _references(category, payload, *, revision=False):
+    allowed = {"source_revision"} if revision else set(PROFILES[category].checks)
+    if not isinstance(payload, dict) or not set(payload) <= allowed:
         raise ValueError("invalid evidence fields")
     if any(
         not isinstance(value, str) or not value.strip() or len(value) > 200
@@ -43,7 +43,7 @@ def execute_read_only(category, tool, payload, *, checkout=None, public_github=F
     """Dispatch host-approved data to an allowlisted, offline adapter."""
     if tool != TOOL_REGISTRY.get(category) or tool is None:
         raise ValueError("tool is outside the category scope")
-    refs = _references(category, payload)
+    refs = _references(category, payload, revision=tool == "git_revision")
     evidence = {}
     if tool == "git_revision":
         if set(refs) != {"source_revision"}:
