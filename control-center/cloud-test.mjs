@@ -35,3 +35,34 @@ const evidenceApi=cloudClient(c,async(u,o)=>{
 await assert.rejects(()=>evidenceApi.submitEngineeringEvidence("",revision),/Sign in/);
 await assert.rejects(()=>evidenceApi.submitEngineeringEvidence(token,"main"),/commit SHA/);
 assert.equal(await evidenceApi.submitEngineeringEvidence(token,revision),jobId);
+
+const {readFile}=await import("node:fs/promises");
+const elements=new Map();
+globalThis.document={
+  getElementById(id){
+    if(!elements.has(id))elements.set(id,{hidden:true,value:"",textContent:"",
+      replaceChildren(){},addEventListener(name,callback){this[name]=callback}});
+    return elements.get(id);
+  }
+};
+let role="founder";
+globalThis.fetch=async url=>{
+  const result=url.includes("/token?")?{access_token:"fixture"}:
+    url.endsWith("sal_workspace_snapshot")?{workspace:"Demo",role,tasks:[],reports:[]}:[];
+  return {ok:true,status:200,json:async()=>result};
+};
+const source=(await readFile(new URL("./cloud.mjs",import.meta.url),"utf8"))
+  .replace(/"\.\/cloud-core\.mjs[^"]*"/,JSON.stringify(new URL("./cloud-core.mjs",import.meta.url).href))
+  .replace(/import config from "[^"]+";/,"const config="+JSON.stringify({...c,queueEnabled:true})+";")
+  .replace(/import \{renderQueue,clearQueue\} from "[^"]+";/,
+    "const renderQueue=async()=>{throw Error('Queue unavailable')}; const clearQueue=()=>{};");
+await import("data:text/javascript;base64,"+Buffer.from(source).toString("base64"));
+const tick=()=>new Promise(resolve=>setImmediate(resolve));
+document.getElementById("login").submit({preventDefault(){}});
+await tick();
+assert.equal(document.getElementById("engineering-evidence").hidden,false);
+assert.match(document.getElementById("notice").textContent,/Queue unavailable/);
+role="viewer";
+document.getElementById("refresh-cloud").onclick();
+await tick();
+assert.equal(document.getElementById("engineering-evidence").hidden,true);
