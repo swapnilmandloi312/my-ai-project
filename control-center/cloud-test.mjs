@@ -23,3 +23,15 @@ await assert.rejects(()=>scheduleApi.schedules(""),/Sign in/);
 assert.equal((await scheduleApi.schedules(token))[0].last_job,"fixture-job");
 await assert.rejects(()=>noMembership.schedules(token),/Invalid schedule index/);
 console.log("Authenticated schedule index tests passed");
+
+const revision="a".repeat(40), jobId="11111111-0000-4000-8000-111111111111";
+const evidenceApi=cloudClient(c,async(u,o)=>{
+  assert.equal(u,c.url+"/rest/v1/rpc/sal_submit_evidence_job");
+  assert.equal(o.headers.Authorization,"Bearer fixture");
+  assert.deepEqual(JSON.parse(o.body),{p_slug:"swapnil-ai-labs",p_category:"engineering",
+    p_key:"engineering:"+revision,p_refs:{source_revision:revision}});
+  return {ok:true,status:200,json:async()=>jobId};
+});
+await assert.rejects(()=>evidenceApi.submitEngineeringEvidence("",revision),/Sign in/);
+await assert.rejects(()=>evidenceApi.submitEngineeringEvidence(token,"main"),/commit SHA/);
+assert.equal(await evidenceApi.submitEngineeringEvidence(token,revision),jobId);
