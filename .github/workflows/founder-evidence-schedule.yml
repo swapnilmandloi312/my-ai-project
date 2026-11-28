@@ -1,0 +1,39 @@
+name: Founder evidence scheduling
+on:
+  pull_request:
+    paths:
+      - 'deployment/supabase/**'
+      - '.github/workflows/founder-evidence-schedule.yml'
+permissions:
+  contents: read
+jobs:
+  postgres:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: synthetic-ci-only
+          POSTGRES_DB: sal_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGPASSWORD: synthetic-ci-only
+      PGHOST: 127.0.0.1
+      PGUSER: postgres
+      PGDATABASE: sal_test
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify approvals, dependency gates and idempotent job materialization
+        run: |
+          cd deployment/supabase
+          for script in test_bootstrap.sql test_queue_fixture.sql 002_synthetic_job_queue.sql test_health_fixture.sql 003_hourly_runtime_health.sql 004_scoped_hourly_worker.sql 006_agent_deliverables.sql 007_leased_evidence_jobs.sql 008_github_evidence_claim.sql 010_founder_evidence_schedules.sql test_founder_evidence_schedules.sql; do
+            psql -X -v ON_ERROR_STOP=1 -f "$script"
+          done
