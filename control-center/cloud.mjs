@@ -106,9 +106,14 @@ $("engineering-evidence").onsubmit=e=>{
   const category=$("evidence-category").value;
   const revision=$("engineering-revision").value.trim();
   act(async()=>{
-    const id=await client.submitEvidence(token,category,revision);
-    await refresh();
-    $("founder-action-status").textContent="Job "+id+" submitted for separate approval.";
+    try{
+      const id=await client.submitEvidence(token,category,revision);
+      $("founder-action-status").textContent="Job "+id+" submitted for separate approval.";
+      try{await refresh()}catch(e){note("Job saved; refresh failed: "+e.message)}
+      $("founder-action-status").textContent="Job "+id+" submitted for separate approval.";
+    }catch(e){
+      $("founder-action-status").textContent="Evidence submission failed: "+e.message;
+    }
   });
 };
 $("evidence-category").onchange=()=>{
