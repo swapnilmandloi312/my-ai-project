@@ -1,9 +1,24 @@
+export const evidenceContracts=Object.freeze({
+  ...Object.fromEntries(["architecture","automation","backend","devops","engineering","frontend","quality","technical_writing"].map(category=>[category,"source_revision"])),
+  research:"doi",
+  ...Object.fromEntries(["security","privacy","compliance","it_ops","observability","incident_response","integration"].map(category=>[category,"snapshot"]))
+});
 export function validateConfig(c){if(!c||typeof c.url!=="string"||!/^https:\/\/[a-z0-9]+\.supabase\.co$/.test(c.url)||typeof c.key!=="string"||!/^sb_publishable_[A-Za-z0-9_-]+$/.test(c.key))throw Error("Cloud configuration unavailable");return c}
 export function cloudClient(config,fetcher=fetch){const c=validateConfig(config);async function call(path,body,token){const headers={"apikey":c.key,"Content-Type":"application/json"};if(token)headers.Authorization="Bearer "+token;const r=await fetcher(c.url+path,{method:"POST",headers,body:JSON.stringify(body),cache:"no-store",credentials:"omit",redirect:"error"});if(!r.ok)throw Error(r.status===401||r.status===403?"Access denied or session expired":"Cloud request failed");if(r.status===204)return null;return r.json()}return {async signIn(email,password){const r=await call("/auth/v1/token?grant_type=password",{email,password});if(typeof r?.access_token!=="string"||!r.access_token)throw Error("No session returned");return r.access_token},async snapshot(token){if(!token)throw Error("Sign in first");const r=await call("/rest/v1/rpc/sal_workspace_snapshot",{p_slug:"swapnil-ai-labs"},token);if(!r||typeof r.workspace!=="string"||!Array.isArray(r.tasks)||!Array.isArray(r.reports))throw Error("No approved workspace membership");return r},async jobCommand(token,action,args={}){if(!token)throw Error("Sign in first");if(!["snapshot","submit","approve","configure","agent_pause"].includes(action))throw Error("Unknown job command");const r=await call("/rest/v1/rpc/sal_job_command",{p_slug:"swapnil-ai-labs",p_action:action,p_args:args},token);if(!r||typeof r!=="object")throw Error("Invalid queue response");if(action==="snapshot"&&(!["founder","operator","viewer"].includes(r.role)||!Array.isArray(r.jobs)||!Array.isArray(r.events)||!Array.isArray(r.profiles)||!r.limits))throw Error("Invalid queue snapshot");return r},async submitEngineeringEvidence(token,revision){
+return this.submitEvidence(token,"engineering",revision);
+},async submitEvidence(token,category,input){
 if(!token)throw Error("Sign in first");
-if(!/^[0-9a-f]{40}$/.test(revision))throw Error("Enter a full GitHub commit SHA");
+if(!Object.hasOwn(evidenceContracts,category))throw Error("Unsupported evidence category");
+const field=evidenceContracts[category];
+let value=input;
+if(field==="source_revision"&&!/^[0-9a-f]{40}$/.test(value))throw Error("Enter a full GitHub commit SHA");
+if(field==="doi"){
+  if(typeof value!=="string"||value.length>79||!/^10\.[0-9]{4,9}\/[-._;()/:A-Z0-9]+$/i.test(value))throw Error("Enter a valid DOI of up to 79 characters");
+  value=value.toLowerCase();
+}
+if(field==="snapshot")value="workspace";
 const id=await call("/rest/v1/rpc/sal_submit_evidence_job",{
-p_slug:"swapnil-ai-labs",p_category:"engineering",p_key:"engineering:"+revision,p_refs:{source_revision:revision}
+  p_slug:"swapnil-ai-labs",p_category:category,p_key:category+":"+value,p_refs:{[field]:value}
 },token);
 if(typeof id!=="string"||!/^[0-9a-f-]{36}$/.test(id))throw Error("Invalid evidence job ID");
 return id;
