@@ -151,3 +151,9 @@ jobs:
               WHERE d->>'tool'='workspace_operations')<>7 THEN RAISE EXCEPTION 'operations index incomplete'; END IF;
           END $$;
           SQL
+      - name: Persist approved Crossref bibliography from the live API
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/013_crossref_research_evidence.sql
+          psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/test_crossref_worker_fixture.sql
+          PGUSER=sal_hourly_worker PGPASSWORD=synthetic-ci-worker-only python -m swapnil_ai_labs.evidence_worker --crossref --batch 1
+          psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/test_crossref_worker_verify.sql
