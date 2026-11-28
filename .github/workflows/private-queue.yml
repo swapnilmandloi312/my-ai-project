@@ -47,7 +47,10 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/004_scoped_hourly_worker.sql
           psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/test_scoped_worker_fixture.sql
           PGUSER=sal_hourly_worker PGPASSWORD=synthetic-ci-worker-only python -m swapnil_ai_labs.cloud_worker --scoped --batch 2 --record-run 100:1
-          PGUSER=sal_hourly_worker PGPASSWORD=synthetic-ci-worker-only python -m swapnil_ai_labs.cloud_worker --scoped --batch 2 --record-run 100:1
+          duplicate_status=0
+          duplicate_output=$(PGUSER=sal_hourly_worker PGPASSWORD=synthetic-ci-worker-only python -m swapnil_ai_labs.cloud_worker --scoped --batch 2 --record-run 100:1 2>&1) || duplicate_status=$?
+          test "$duplicate_status" -eq 1
+          test "$duplicate_output" = 'bounded worker failed; inspect private queue state'
           if PGUSER=sal_hourly_worker PGPASSWORD=synthetic-ci-worker-only psql -X -v ON_ERROR_STOP=1 -c "SELECT sal_ops.claim_job('other-workspace')"; then exit 1; fi
           if PGUSER=sal_hourly_worker PGPASSWORD=synthetic-ci-worker-only psql -X -v ON_ERROR_STOP=1 -c "SELECT * FROM sal_ops.jobs"; then exit 1; fi
           if PGUSER=sal_hourly_worker PGPASSWORD=synthetic-ci-worker-only psql -X -v ON_ERROR_STOP=1 -c "SELECT sal_ops.hourly_worker_report('100:2','{}')"; then exit 1; fi

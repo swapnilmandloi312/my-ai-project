@@ -83,7 +83,8 @@ def main():
             parser.error('batch must be 1..40 and cannot loop')
         try:
             counts = batch(queue,args.batch)
-            if args.record_run: record_batch(args.record_run,counts)
+            if args.record_run and not record_batch(args.record_run, counts):
+                raise RuntimeError('worker report was rejected')
         except (RuntimeError,subprocess.TimeoutExpired,json.JSONDecodeError,KeyError,ValueError,TypeError):
             raise SystemExit('bounded worker failed; inspect private queue state') from None
         # Public CI logs must not contain private job IDs, counts or evidence.
