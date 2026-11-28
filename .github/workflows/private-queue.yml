@@ -72,6 +72,8 @@ jobs:
           SAL_GITHUB_READ_TOKEN: ${{ github.token }}
         run: |
           psql -X -v ON_ERROR_STOP=1 <<'SQL'
+          UPDATE sal_ops.job_limits SET stopped=false,attempt_limit=attempts_used+8
+          WHERE workspace_id='11111111-1111-1111-1111-111111111111';
           INSERT INTO sal_ops.agent_profiles VALUES
             ('engineering',ARRAY['source_revision']),('technical_writing',ARRAY['source_revision']),('architecture',ARRAY['source_revision']),('automation',ARRAY['source_revision']),('backend',ARRAY['source_revision']),('devops',ARRAY['source_revision']),('frontend',ARRAY['source_revision']),('quality',ARRAY['source_revision'])
           ON CONFLICT DO NOTHING;
@@ -89,7 +91,10 @@ jobs:
           PGUSER=sal_hourly_worker PGPASSWORD=synthetic-ci-worker-only python -m swapnil_ai_labs.evidence_worker --public-github --batch 4
           PGUSER=sal_hourly_worker PGPASSWORD=synthetic-ci-worker-only python -m swapnil_ai_labs.evidence_worker --public-github --batch 4
           psql -X -v ON_ERROR_STOP=1 <<'SQL'
-          DO $$ BEGIN
+          SELECT j.category,j.state,j.attempts,d.body->'source_evidence'->>'deliverable_type' AS deliverable_type
+          FROM sal_ops.jobs j LEFT JOIN sal_ops.agent_deliverables d ON j.id=d.job_id
+          WHERE j.request_key='github-ci-'||j.category ORDER BY j.category;
+          DO $ BEGIN
             IF (SELECT count(*) FROM sal_ops.agent_deliverables d
                 JOIN sal_ops.jobs j ON j.id=d.job_id
                 WHERE j.state='succeeded' AND j.request_key='github-ci-'||j.category
