@@ -62,44 +62,47 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/test_agent_deliverables.sql
           psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/007_leased_evidence_jobs.sql
           psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/008_github_evidence_claim.sql
+          psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/009_github_review_categories.sql
           psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/test_evidence_job_fixture.sql
           test "$(PGUSER=sal_hourly_worker PGPASSWORD=synthetic-ci-worker-only psql -X -qAt -v ON_ERROR_STOP=1 -c "SELECT coalesce(sal_ops.claim_github_evidence_job()::text,'idle')")" = idle
           PGUSER=sal_hourly_worker PGPASSWORD=synthetic-ci-worker-only python -m swapnil_ai_labs.evidence_worker
           psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/test_evidence_job_verify.sql
-      - name: Persist two live GitHub deliverables in disposable PostgreSQL
+      - name: Persist eight live GitHub deliverables in disposable PostgreSQL
         env:
           SAL_GITHUB_READ_TOKEN: ${{ github.token }}
         run: |
           psql -X -v ON_ERROR_STOP=1 <<'SQL'
           INSERT INTO sal_ops.agent_profiles VALUES
-            ('engineering',ARRAY['source_revision']),('technical_writing',ARRAY['source_revision'])
+            ('engineering',ARRAY['source_revision']),('technical_writing',ARRAY['source_revision']),('architecture',ARRAY['source_revision']),('automation',ARRAY['source_revision']),('backend',ARRAY['source_revision']),('devops',ARRAY['source_revision']),('frontend',ARRAY['source_revision']),('quality',ARRAY['source_revision'])
           ON CONFLICT DO NOTHING;
           INSERT INTO sal_ops.agent_controls(workspace_id,category,paused)
           SELECT '11111111-1111-1111-1111-111111111111', category, false
-          FROM sal_ops.agent_profiles WHERE category IN ('engineering','technical_writing')
+          FROM sal_ops.agent_profiles WHERE category IN ('engineering','technical_writing','architecture','automation','backend','devops','frontend','quality')
           ON CONFLICT (workspace_id,category) DO UPDATE SET paused=false;
           SET ROLE authenticated;
           SELECT set_config('request.jwt.claim.sub','aaaaaaaa-0000-0000-0000-000000000001',false);
           SELECT public.sal_job_command('test-workspace','approve',jsonb_build_object('id',
             public.sal_submit_evidence_job('test-workspace',c,'github-ci-'||c,
             '{"source_revision":"42f3324fc53319252c79081243ba54d50893bb15"}')))
-          FROM unnest(ARRAY['engineering','technical_writing']) AS categories(c);
+          FROM unnest(ARRAY['engineering','technical_writing','architecture','automation','backend','devops','frontend','quality']) AS categories(c);
           SQL
-          PGUSER=sal_hourly_worker PGPASSWORD=synthetic-ci-worker-only python -m swapnil_ai_labs.evidence_worker --public-github --batch 2
+          PGUSER=sal_hourly_worker PGPASSWORD=synthetic-ci-worker-only python -m swapnil_ai_labs.evidence_worker --public-github --batch 4
+          PGUSER=sal_hourly_worker PGPASSWORD=synthetic-ci-worker-only python -m swapnil_ai_labs.evidence_worker --public-github --batch 4
           psql -X -v ON_ERROR_STOP=1 <<'SQL'
           DO $$ BEGIN
             IF (SELECT count(*) FROM sal_ops.agent_deliverables d
                 JOIN sal_ops.jobs j ON j.id=d.job_id
-                WHERE j.state='succeeded' AND j.request_key IN ('github-ci-engineering','github-ci-technical_writing')
+                WHERE j.state='succeeded' AND j.request_key='github-ci-'||j.category
+                AND d.body->'source_evidence'->>'deliverable_type'=CASE j.category WHEN 'engineering' THEN 'change_impact_review' WHEN 'technical_writing' THEN 'documentation_coverage_review' WHEN 'architecture' THEN 'component_impact_inventory' WHEN 'automation' THEN 'automation_change_inventory' WHEN 'backend' THEN 'backend_release_review' WHEN 'devops' THEN 'deployment_change_inventory' WHEN 'frontend' THEN 'frontend_regression_scope' WHEN 'quality' THEN 'test_change_inventory' END
                 AND d.body->'source_evidence'->>'commit'='42f3324fc53319252c79081243ba54d50893bb15'
-                AND EXISTS (SELECT FROM sal_ops.job_events e WHERE e.job_id=j.id AND e.event='succeeded'))<>2
+                AND EXISTS (SELECT FROM sal_ops.job_events e WHERE e.job_id=j.id AND e.event='succeeded'))<>8
             THEN RAISE EXCEPTION 'live GitHub deliverables or execution events missing'; END IF;
           END $$;
           SET ROLE authenticated;
           SELECT set_config('request.jwt.claim.sub','aaaaaaaa-0000-0000-0000-000000000001',false);
           DO $$ BEGIN
             IF (SELECT count(*) FROM jsonb_array_elements(public.sal_agent_deliverable_index('test-workspace')) d
-                WHERE d->>'category' IN ('engineering','technical_writing') AND d->>'tool'='git_revision')<>2
+                WHERE d->>'category' IN ('engineering','technical_writing','architecture','automation','backend','devops','frontend','quality') AND d->>'tool'='git_revision')<>8
             THEN RAISE EXCEPTION 'live Github dashboard records missing'; END IF;
           END $$;
           SQL
