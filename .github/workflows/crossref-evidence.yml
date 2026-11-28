@@ -1,0 +1,27 @@
+name: Crossref research evidence
+on:
+  pull_request:
+    paths:
+      - 'swapnil_ai_labs/*crossref_evidence.py'
+      - '.github/workflows/crossref-evidence.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  research-evidence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - run: python3 -m unittest -v swapnil_ai_labs.test_crossref_evidence
+      - name: Read a real scholarly citation
+        run: |
+          python3 - <<'PY'
+          from swapnil_ai_labs.crossref_evidence import bibliography
+          record = bibliography("10.1093/mind/lix.236.433")
+          assert record["doi"] == "10.1093/mind/lix.236.433"
+          assert "computing machinery and intelligence" in record["title"].casefold() and record["publication_year"] == 1950
+          print("Crossref DOI and deposited citation verified")
+          PY
