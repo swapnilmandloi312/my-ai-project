@@ -4,6 +4,7 @@ import json
 from types import MappingProxyType
 
 from swapnil_ai_labs.forty_profiles import PROFILES
+from swapnil_ai_labs.public_github_evidence import public_revision_deliverable
 from swapnil_ai_labs.revision_evidence import revision_receipt
 
 
@@ -38,15 +39,21 @@ def _references(category, payload):
     return {key: payload[key] for key in sorted(payload)}
 
 
-def execute_read_only(category, tool, payload, *, checkout=None):
+def execute_read_only(category, tool, payload, *, checkout=None, public_github=False):
     """Dispatch host-approved data to an allowlisted, offline adapter."""
     if tool != TOOL_REGISTRY.get(category) or tool is None:
         raise ValueError("tool is outside the category scope")
     refs = _references(category, payload)
+    evidence = {}
     if tool == "git_revision":
-        if checkout is None or set(refs) != {"source_revision"}:
-            raise ValueError("checkout and source revision required")
-        revision_receipt(checkout, category, refs["source_revision"])
+        if set(refs) != {"source_revision"}:
+            raise ValueError("source revision required")
+        if public_github:
+            evidence = {"source_evidence": public_revision_deliverable(category, refs["source_revision"])}
+        else:
+            if checkout is None:
+                raise ValueError("checkout required")
+            revision_receipt(checkout, category, refs["source_revision"])
     missing = sorted(set(PROFILES[category].checks) - set(refs))
     return {
         "category": category,
@@ -57,6 +64,7 @@ def execute_read_only(category, tool, payload, *, checkout=None):
         "objective": PROFILES[category].objective,
         "next_action": PROFILES[category].next_action,
         "requires_review": True,
+        **evidence,
     }
 
 
