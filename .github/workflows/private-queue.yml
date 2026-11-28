@@ -4,6 +4,7 @@ on:
     paths:
       - 'deployment/supabase/**'
       - 'swapnil_ai_labs/cloud_worker.py'
+      - 'swapnil_ai_labs/evidence_worker.py'
       - 'swapnil_ai_labs/test_cloud_worker.py'
       - '.github/workflows/private-queue.yml'
 permissions:
@@ -60,6 +61,8 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/006_agent_deliverables.sql
           psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/test_agent_deliverables.sql
           psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/007_leased_evidence_jobs.sql
+          psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/008_github_evidence_claim.sql
           psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/test_evidence_job_fixture.sql
+          test "$(PGUSER=sal_hourly_worker PGPASSWORD=synthetic-ci-worker-only psql -X -qAt -v ON_ERROR_STOP=1 -c "SELECT coalesce(sal_ops.claim_github_evidence_job()::text,'idle')")" = idle
           PGUSER=sal_hourly_worker PGPASSWORD=synthetic-ci-worker-only python -m swapnil_ai_labs.evidence_worker
           psql -X -v ON_ERROR_STOP=1 -f deployment/supabase/test_evidence_job_verify.sql
