@@ -44,4 +44,5 @@ export async function renderQueue(client,token,act){
  $("job-submit").onsubmit=e=>{e.preventDefault();if(!writer)return;command("submit",{category:$("job-category").value,request_key:crypto.randomUUID(),evidence:{},parent_id:$("job-parent").value||null})};
  const events=$("job-events");events.replaceChildren();
  for(const e of s.events){const row=document.createElement("article");row.className="gate";row.append(text("strong",e.event),text("span",e.recorded_at+" · "+(e.job_id||"workspace")+" · "+JSON.stringify(e.detail)));events.append(row)}
+ return s;
 }

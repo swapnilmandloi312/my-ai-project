@@ -12,6 +12,28 @@ if(!token)throw Error("Sign in first");
 const rows=await call("/rest/v1/rpc/sal_agent_deliverable_index",{p_slug:"swapnil-ai-labs"},token);
 if(!Array.isArray(rows)||rows.some(row=>!row||["job_id","category","tool","stored_at"].some(key=>typeof row[key]!=="string")))throw Error("Invalid deliverable index");
 return rows;
+},async authorizeEngineeringSchedule(token,{key,template,dependency,interval,occurrences,hours}){
+if(!token)throw Error("Sign in first");
+const uuid=/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/;
+if(!/^[a-zA-Z0-9_-]{1,64}$/.test(key)||!uuid.test(template)||(dependency&&!uuid.test(dependency))
+||!Number.isInteger(interval)||interval<1||interval>168
+||!Number.isInteger(occurrences)||occurrences<1||occurrences>24
+||!Number.isInteger(hours)||hours<1||hours>24)throw Error("Invalid schedule or authorization limits");
+const id=await call("/rest/v1/rpc/sal_evidence_schedule",{
+p_slug:"swapnil-ai-labs",p_key:key,p_template:template,p_dependency:dependency||null,p_interval_hours:interval
+},token);
+if(typeof id!=="string"||!uuid.test(id))throw Error("Invalid schedule response");
+const accepted=await call("/rest/v1/rpc/sal_set_recurring_evidence_approval",{
+p_slug:"swapnil-ai-labs",p_key:key,p_occurrences:occurrences,p_hours:hours
+},token);
+if(accepted!==true)throw Error("Schedule exists but authorization was declined");
+return id;
+},async revokeScheduleApproval(token,key){
+if(!token)throw Error("Sign in first");
+const accepted=await call("/rest/v1/rpc/sal_set_recurring_evidence_approval",{
+p_slug:"swapnil-ai-labs",p_key:key,p_occurrences:0,p_hours:null
+},token);
+if(accepted!==true)throw Error("No enabled founder schedule matched");
 },async schedules(token){
 if(!token)throw Error("Sign in first");
 const rows=await call("/rest/v1/rpc/sal_evidence_schedule_index",{p_slug:"swapnil-ai-labs"},token);
