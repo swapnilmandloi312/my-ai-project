@@ -4,24 +4,12 @@ const text=(tag,value)=>{const x=document.createElement(tag);x.textContent=value
 const option=(value,label)=>{const x=text("option",label);x.value=value;return x};
 export function clearQueue(){
  $("job-workspace").hidden=true;
- $("engineering-evidence").reset();
  for(const id of ["job-results","job-events","job-profiles","job-category","job-parent"])$(id).replaceChildren();
 }
 export async function renderQueue(client,token,act){
  const s=await client.jobCommand(token,"snapshot");
  const founder=s.role==="founder",writer=founder||s.role==="operator";
  $("job-workspace").hidden=false;
- $("engineering-evidence").hidden=!founder;
- $("engineering-evidence").onsubmit=e=>{
-  e.preventDefault();
-  if(!founder)return;
-  const revision=$("engineering-revision").value.trim();
-  act(async()=>{
-   const id=await client.submitEngineeringEvidence(token,revision);
-   await renderQueue(client,token,act);
-   $("job-notice").textContent="Engineering evidence job "+id+" submitted. Review it in the queue before approval.";
-  });
- };
  $("job-founder").hidden=!founder;$("job-submit").hidden=!writer;
  $("job-limits").textContent=(s.limits.stopped?"STOPPED":"EXECUTION ENABLED")+" · "+s.limits.attempts_used+"/"+s.limits.attempt_limit+" lifetime attempts";
  $("attempt-limit").value=s.limits.attempt_limit;
