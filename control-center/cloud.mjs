@@ -1,4 +1,4 @@
-import {cloudClient} from "./cloud-core.mjs?v=delegation-1";import config from "./cloud-config.mjs?v=delegation-1";import {renderQueue,clearQueue} from "./queue-ui.mjs?v=delegation-1";
+import {cloudClient,evidenceContracts} from "./cloud-core.mjs?v=evidence-intake-1";import config from "./cloud-config.mjs?v=evidence-intake-1";import {renderQueue,clearQueue} from "./queue-ui.mjs?v=evidence-intake-1";
 const $=id=>document.getElementById(id);let client,token="",busy=false;
 function note(s){$("notice").textContent=s}function clear(){token="";$("recurring-evidence").hidden=true;$("recurring-evidence").reset();$("recurring-status").textContent="";$("agent-inventory").replaceChildren();$("inventory-status").textContent="";$("engineering-evidence").hidden=true;$("engineering-evidence").reset();$("founder-action-status").textContent="";clearQueue();$("workspace").hidden=true;$("cloud-tasks").replaceChildren();$("cloud-reports").replaceChildren();$("cloud-deliverables").replaceChildren();$("deliverable-status").textContent="";$("cloud-schedules").replaceChildren();$("schedule-status").textContent=""}function controls(){ $("signin").disabled=busy||!!token||!client;$("refresh-cloud").disabled=busy||!token;$("signout").disabled=busy||!token}
 function render(s){$("workspace-title").textContent=s.workspace+" · "+s.role;$("counts").textContent=s.profiles+" profiles · "+s.paused+" cloud controls paused · "+s.tasks.length+" tasks";for(const [id,rows,format] of [["cloud-tasks",s.tasks,t=>[t.title,t.priority+" · "+t.status]],["cloud-reports",s.reports,r=>[r.source+" · "+r.status,JSON.stringify(r.summary)]]]){const root=$(id);root.replaceChildren();for(const item of rows){const d=document.createElement("article");d.className="gate";const [a,b]=format(item);const h=document.createElement("strong");h.textContent=a;const p=document.createElement("span");p.textContent=b;d.append(h,p);root.append(d)}}$("workspace").hidden=false}
@@ -94,12 +94,21 @@ async function act(fn){if(busy)return;busy=true;controls();try{await fn()}catch(
 $("engineering-evidence").onsubmit=e=>{
   e.preventDefault();
   if($("engineering-evidence").hidden)return;
+  const category=$("evidence-category").value;
   const revision=$("engineering-revision").value.trim();
   act(async()=>{
-    const id=await client.submitEngineeringEvidence(token,revision);
+    const id=await client.submitEvidence(token,category,revision);
     await refresh();
     $("founder-action-status").textContent="Job "+id+" submitted for separate approval.";
   });
+};
+$("evidence-category").onchange=()=>{
+  const field=evidenceContracts[$("evidence-category").value];
+  $("evidence-input-label").textContent=field==="doi"?"Crossref DOI":"Full GitHub commit SHA";
+  $("engineering-revision").hidden=field==="snapshot";
+  $("evidence-input-label").hidden=field==="snapshot";
+  $("engineering-revision").required=field!=="snapshot";
+  $("engineering-revision").value="";
 };
 try{client=cloudClient(config);note("Sign in with your approved application account.")}catch(e){note(e.message)}
 $("login").addEventListener("submit",e=>{e.preventDefault();act(async()=>{const password=$("password").value;$("password").value="";token=await client.signIn($("email").value,password);try{note("Authenticated private snapshot loaded.");await refresh()}catch(err){try{await client.logout(token)}catch{}throw err}})});
