@@ -20,8 +20,8 @@ jobs:
         run: |
           python3 - <<'PY'
           from swapnil_ai_labs.crossref_evidence import bibliography
-          record = bibliography("10.1038/s41586-021-03819-2")
-          assert record["doi"] == "10.1038/s41586-021-03819-2"
-          assert "AlphaFold" in record["title"] and record["publication_year"] == 2021
+          record = bibliography("10.1093/mind/lix.236.433")
+          assert record["doi"] == "10.1093/mind/lix.236.433"
+          assert "computing machinery and intelligence" in record["title"].casefold() and record["publication_year"] == 1950
           print("Crossref DOI and deposited citation verified")
           PY
