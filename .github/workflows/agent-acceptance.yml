@@ -16,3 +16,16 @@ jobs:
         with:
           persist-credentials: false
       - run: python3 -m unittest -v swapnil_ai_labs.test_agent_acceptance swapnil_ai_labs.test_evidence_tools
+      - name: Read the approved public repository
+        run: |
+          python3 - <<'PY'
+          from swapnil_ai_labs.evidence_tools import encode_deliverable, execute_read_only
+          revision = "42f3324fc53319252c79081243ba54d50893bb15"
+          for category in ("engineering", "technical_writing"):
+              result = execute_read_only(
+                  category, "git_revision", {"source_revision": revision}, public_github=True,
+              )
+              assert result["source_evidence"]["commit"] == revision
+              assert encode_deliverable(result)
+              print(f"{category}: public GitHub evidence verified")
+          PY
