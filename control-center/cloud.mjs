@@ -1,8 +1,28 @@
 import {cloudClient} from "./cloud-core.mjs";import config from "./cloud-config.mjs";import {renderQueue,clearQueue} from "./queue-ui.mjs";
 const $=id=>document.getElementById(id);let client,token="",busy=false;
-function note(s){$("notice").textContent=s}function clear(){token="";clearQueue();$("workspace").hidden=true;$("cloud-tasks").replaceChildren();$("cloud-reports").replaceChildren()}function controls(){ $("signin").disabled=busy||!!token||!client;$("refresh-cloud").disabled=busy||!token;$("signout").disabled=busy||!token}
+function note(s){$("notice").textContent=s}function clear(){token="";clearQueue();$("workspace").hidden=true;$("cloud-tasks").replaceChildren();$("cloud-reports").replaceChildren();$("cloud-deliverables").replaceChildren();$("deliverable-status").textContent=""}function controls(){ $("signin").disabled=busy||!!token||!client;$("refresh-cloud").disabled=busy||!token;$("signout").disabled=busy||!token}
 function render(s){$("workspace-title").textContent=s.workspace+" · "+s.role;$("counts").textContent=s.profiles+" profiles · "+s.paused+" cloud controls paused · "+s.tasks.length+" tasks";for(const [id,rows,format] of [["cloud-tasks",s.tasks,t=>[t.title,t.priority+" · "+t.status]],["cloud-reports",s.reports,r=>[r.source+" · "+r.status,JSON.stringify(r.summary)]]]){const root=$(id);root.replaceChildren();for(const item of rows){const d=document.createElement("article");d.className="gate";const [a,b]=format(item);const h=document.createElement("strong");h.textContent=a;const p=document.createElement("span");p.textContent=b;d.append(h,p);root.append(d)}}$("workspace").hidden=false}
-async function refresh(){render(await client.snapshot(token));if(config?.queueEnabled===true){try{await renderQueue(client,token,act)}catch(e){clearQueue();note("Private report loaded; synthetic queue unavailable: "+e.message)}}}
+async function renderDeliverables(){
+  const root=$("cloud-deliverables");
+  root.replaceChildren();
+  try{
+    const rows=await client.deliverables(token);
+    $("deliverable-status").textContent=rows.length ? "" : "No evidence deliverables recorded.";
+    for(const row of rows){
+      const article=document.createElement("article");
+      article.className="gate";
+      const title=document.createElement("strong");
+      title.textContent=row.category+" · "+row.tool;
+      const detail=document.createElement("span");
+      detail.textContent=row.stored_at+" · Job "+row.job_id;
+      article.append(title,detail);
+      root.append(article);
+    }
+  }catch(e){
+    $("deliverable-status").textContent="Deliverable index unavailable: "+e.message;
+  }
+}
+async function refresh(){render(await client.snapshot(token));await renderDeliverables();if(config?.queueEnabled===true){try{await renderQueue(client,token,act)}catch(e){clearQueue();note("Private report loaded; synthetic queue unavailable: "+e.message)}}}
 async function act(fn){if(busy)return;busy=true;controls();try{await fn()}catch(e){clear();note(e.message)}finally{busy=false;controls()}}
 try{client=cloudClient(config);note("Sign in with your approved application account.")}catch(e){note(e.message)}
 $("login").addEventListener("submit",e=>{e.preventDefault();act(async()=>{const password=$("password").value;$("password").value="";token=await client.signIn($("email").value,password);try{note("Authenticated private snapshot loaded.");await refresh()}catch(err){try{await client.logout(token)}catch{}throw err}})});
