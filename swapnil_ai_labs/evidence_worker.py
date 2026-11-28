@@ -10,7 +10,11 @@ from swapnil_ai_labs.evidence_tools import encode_deliverable, execute_read_only
 
 
 def run_one(checkout=None, *, public_github=False):
-    job = json.loads(sql("SELECT coalesce(sal_ops.claim_evidence_job()::text,'null');"))
+    claim = (
+        "SELECT coalesce(sal_ops.claim_github_evidence_job()::text,'null');"
+        if public_github else "SELECT coalesce(sal_ops.claim_evidence_job()::text,'null');"
+    )
+    job = json.loads(sql(claim))
     if job is None:
         return "idle"
     try:
@@ -38,14 +42,18 @@ def main():
     source = parser.add_mutually_exclusive_group()
     source.add_argument("--checkout")
     source.add_argument("--public-github", action="store_true")
+    parser.add_argument("--batch", type=int, choices=range(1, 5), default=1)
     args = parser.parse_args()
     try:
-        outcome = run_one(args.checkout, public_github=args.public_github)
+        for _ in range(args.batch):
+            outcome = run_one(args.checkout, public_github=args.public_github)
+            if outcome != "stored":
+                break
     except (RuntimeError, TimeoutExpired, ValueError, KeyError, OSError):
         raise SystemExit("evidence worker failed") from None
     if outcome == "adapter failed":
         raise SystemExit("evidence adapter failed")
-    print("evidence worker " + outcome)
+    print("evidence worker finished")
 
 
 if __name__ == "__main__":

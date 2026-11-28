@@ -3,6 +3,14 @@ on:
   schedule:
     - cron: '17 * * * *'
   workflow_dispatch:
+    inputs:
+      mode:
+        description: Worker queue
+        type: choice
+        options:
+          - synthetic
+          - evidence-canary
+        default: synthetic
 permissions:
   contents: read
 concurrency:
@@ -10,7 +18,11 @@ concurrency:
   cancel-in-progress: false
 jobs:
   worker:
-    if: github.ref == 'refs/heads/main' && vars.SWAPNIL_WORKER_ENABLED == 'true'
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      ((github.event_name == 'workflow_dispatch' && inputs.mode == 'evidence-canary') ||
+       vars.SWAPNIL_WORKER_ENABLED == 'true' ||
+       (github.event_name == 'schedule' && vars.SWAPNIL_EVIDENCE_HOURLY == 'true'))
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     environment: production-worker
@@ -18,8 +30,12 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false
-      - name: Run bounded approved synthetic jobs
+      - name: Run bounded approved jobs
         env:
+          REQUESTED_MODE: ${{ inputs.mode }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVIDENCE_HOURLY: ${{ vars.SWAPNIL_EVIDENCE_HOURLY }}
+          SAL_GITHUB_READ_TOKEN: ${{ github.token }}
           PGHOST: ${{ secrets.SAL_WORKER_PGHOST }}
           PGUSER: ${{ secrets.SAL_WORKER_PGUSER }}
           PGPASSWORD: ${{ secrets.SAL_WORKER_PGPASSWORD }}
@@ -39,4 +55,11 @@ jobs:
           printf '%s\n' "$WORKER_CA" > "$ca"
           unset WORKER_CA
           export PGSSLROOTCERT="$ca"
-          python3 -m swapnil_ai_labs.cloud_worker --scoped --batch 20 --record-run "$GITHUB_RUN_ID:$GITHUB_RUN_ATTEMPT"
+          if [[ "$REQUESTED_MODE" == evidence-canary ]]; then
+            python3 -m swapnil_ai_labs.evidence_worker --public-github --batch 1
+          elif [[ "$EVENT_NAME" == schedule && "$EVIDENCE_HOURLY" == true ]]; then
+            python3 -m swapnil_ai_labs.evidence_worker --public-github --batch 4
+          else
+            unset SAL_GITHUB_READ_TOKEN
+            python3 -m swapnil_ai_labs.cloud_worker --scoped --batch 20 --record-run "$GITHUB_RUN_ID:$GITHUB_RUN_ATTEMPT"
+          fi
