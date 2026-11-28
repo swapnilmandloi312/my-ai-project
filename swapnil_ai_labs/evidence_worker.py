@@ -3,6 +3,7 @@
 import argparse
 import json
 from subprocess import TimeoutExpired
+from uuid import UUID
 
 from swapnil_ai_labs.cloud_worker import sql
 from swapnil_ai_labs.evidence_tools import encode_deliverable, execute_read_only
@@ -18,9 +19,13 @@ def run_one(checkout=None):
         ))
     except ValueError:
         body = ""
+    job_id = UUID(job["id"])
+    lease = UUID(job["lease_id"])
+    # Encode restricted characters and send evidence over stdin, outside argv.
+    encoded = body.encode().hex()
     accepted = sql(
-        "SELECT sal_ops.finish_evidence_job(:'id'::uuid,:'lease'::uuid,NULLIF(:'body','')::jsonb);",
-        id=job["id"], lease=job["lease_id"], body=body,
+        f"SELECT sal_ops.finish_evidence_job('{job_id}'::uuid,'{lease}'::uuid,"
+        f"NULLIF(convert_from(decode('{encoded}','hex'),'UTF8'),'')::jsonb);"
     )
     if accepted != "t":
         raise RuntimeError("evidence lease rejected")
