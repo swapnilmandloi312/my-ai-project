@@ -11,6 +11,7 @@ on:
           - synthetic
           - evidence-canary
           - operations-canary
+          - research-canary
         default: synthetic
 permissions:
   contents: read
@@ -21,7 +22,7 @@ jobs:
   worker:
     if: >-
       github.ref == 'refs/heads/main' &&
-      ((github.event_name == 'workflow_dispatch' && (inputs.mode == 'evidence-canary' || inputs.mode == 'operations-canary')) ||
+      ((github.event_name == 'workflow_dispatch' && (inputs.mode == 'evidence-canary' || inputs.mode == 'operations-canary' || inputs.mode == 'research-canary')) ||
        vars.SWAPNIL_WORKER_ENABLED == 'true' ||
        (github.event_name == 'schedule' && (vars.SWAPNIL_EVIDENCE_HOURLY == 'true' || vars.SWAPNIL_OPERATIONS_HOURLY == 'true')))
     runs-on: ubuntu-24.04
@@ -62,6 +63,8 @@ jobs:
             python3 -m swapnil_ai_labs.evidence_worker --public-github --batch 1
           elif [[ "$REQUESTED_MODE" == operations-canary ]]; then
             env -u SAL_GITHUB_READ_TOKEN python3 -m swapnil_ai_labs.evidence_worker --operations --batch 1
+          elif [[ "$REQUESTED_MODE" == research-canary ]]; then
+            env -u SAL_GITHUB_READ_TOKEN python3 -m swapnil_ai_labs.evidence_worker --crossref --batch 1
           elif [[ "$EVENT_NAME" == schedule && ( "$EVIDENCE_HOURLY" == true || "$OPERATIONS_HOURLY" == true ) ]]; then
             batch=4
             if [[ "$EVIDENCE_HOURLY" == true && "$OPERATIONS_HOURLY" == true ]]; then
