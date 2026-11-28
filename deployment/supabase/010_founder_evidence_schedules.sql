@@ -109,7 +109,7 @@ BEGIN
 END $$;
 
 CREATE FUNCTION public.sal_evidence_schedule_index(p_slug text)
-RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog AS $
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog AS $$
 DECLARE w uuid; result jsonb;
 BEGIN
  SELECT m.workspace_id INTO w FROM sal_ops.members m
@@ -126,7 +126,7 @@ BEGIN
   WHERE s.workspace_id=w ORDER BY s.next_due,s.id LIMIT 100
  ) plan;
  RETURN result;
-END $;
+END $$;
 
 REVOKE ALL ON FUNCTION public.sal_evidence_schedule_index(text),public.sal_evidence_schedule(text,text,uuid,uuid,int),
  public.sal_stop_evidence_schedule(text,text),sal_ops.materialize_github_evidence_schedules()
